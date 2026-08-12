@@ -87,7 +87,7 @@ Implements `specs/enterprise-boilerplate.plan.md`. Ordered by dependency. T1–T
 
 - [ ] **T16: Rate limit in channel auth**
   - Acceptance: `createRateLimitAuth` (sliding window 20/1m, principal-or-IP identifier) prepended to `agent/channels/eve.ts` auth array
-  - Verify: `pnpm build` green; dev-run: request past window returns 429
+  - Verify: `pnpm build` green; dev-run: request past window returns 403 (ForbiddenError; needs live Upstash Redis)
   - Files: `agent/channels/eve.ts`
 
 ## Phase E — CI + delivery

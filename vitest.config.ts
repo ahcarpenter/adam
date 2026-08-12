@@ -2,11 +2,11 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    include: ["lib/**/*.test.ts", "agent/**/*.test.ts"],
+    include: ["agent/**/*.test.ts", "tests/**/*.test.ts"],
     passWithNoTests: true,
     coverage: {
       provider: "v8",
-      include: ["lib/**/*.ts", "agent/**/*.ts"],
+      include: ["agent/**/*.ts"],
       exclude: [
         "**/*.test.ts",
         // Wiring-only files: executed by the eve runtime at startup, not unit-testable.
@@ -15,6 +15,9 @@ export default defineConfig({
         "agent/instrumentation.ts",
         "agent/channels/**",
         "agent/extensions/**",
+        // Self-contained Upstash tool definitions: execute needs live Redis;
+        // shape is verified by tests/tools.test.ts import-smoke tests.
+        "agent/tools/**",
       ],
       thresholds: {
         lines: 95,

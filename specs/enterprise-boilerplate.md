@@ -151,7 +151,7 @@ POSTHOG_HOST (default https://us.i.posthog.com), POSTHOG_PROJECT_TOKEN
 2. `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm knip`, `pnpm test:coverage` all pass locally and in CI.
 3. CI workflow green on GitHub; coverage report visible on Codecov.
 4. With env vars set, `eve dev` + one chat turn produces: (a) a trace in Braintrust containing only AI spans, (b) structured logs in PostHog carrying trace ids, (c) chat transcript persisted in Upstash Redis.
-5. Rate limit verified: exceeding the sliding window returns 429 on the channel.
+5. Rate limit verified: exceeding the sliding window returns 403 on the channel.
 6. Second identical call to `cached_example` served from Redis cache (observable via log field or Redis key `agentkit:toolCache:*`).
 7. Renovate opens its onboarding PR; lint-staged blocks a badly formatted commit.
 
@@ -160,6 +160,12 @@ POSTHOG_HOST (default https://us.i.posthog.com), POSTHOG_PROJECT_TOKEN
 None.
 
 ## Decisions Log
+
+- 2026-08-12 (implementation): winston-sharing risk resolved — the server build externalizes winston to a single import, so the default logger configured in `instrumentation.ts` is the same instance tool files get from `import winston from "winston"`. No `@opentelemetry/api-logs` fallback needed.
+- 2026-08-12 (implementation): instrumentation degrades gracefully outside production — incomplete env logs a structured warning and skips exporters instead of crashing `eve dev`; production (`NODE_ENV`/`VERCEL_ENV=production`) still fails fast.
+- 2026-08-12 (implementation): rate limit over-limit responds **403 Forbidden** (ForbiddenError from `createRateLimitAuth`), not 429 as originally speculated. Success criterion 5 reads 403 accordingly.
+- 2026-08-12 (implementation): extension also registers dynamic `agentkit__search*` tools even without `search` config; disabled via `disableTool()` overrides alongside the memory ones so authored `agent/tools/search.ts` is the only RAG surface.
+- 2026-08-12 (implementation): shared code lives in `agent/lib/` (eve's sanctioned import-only slot), not repo-root `lib/`. Env template is `env.example` (no leading dot) to stay outside `.env*` ignore/deny rules.
 
 - 2026-08-12: Spec approved. Codecov gate set to fail below 95% project coverage (was: informational).
 - 2026-08-12: Drizzle removed from scope. Biome owns TS/JS/JSON lint+format; Prettier scoped to md/yml/css. Standalone tool files own memory+RAG; extension scoped to chat history. Minimal skeleton scope.
