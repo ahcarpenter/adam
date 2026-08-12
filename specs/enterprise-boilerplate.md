@@ -46,10 +46,11 @@ Success looks like: clone → `pnpm install` → set env vars → `eve dev` runs
 Dev:        pnpm dev                 # eve dev
 Build:      pnpm build               # eve build
 Typecheck:  pnpm typecheck           # tsc
-Lint:       pnpm lint                # biome check .
-Lint fix:   pnpm lint:fix            # biome check --write .
-Format:     pnpm format              # biome format --write . && prettier --write "**/*.{md,yml,yaml,css}"
-Fmt check:  pnpm format:check        # biome ci + prettier --check (CI mode)
+Lint fix:   pnpm lint                # biome lint --write .
+Lint:       pnpm lint:check          # biome lint .
+Lint CI:    pnpm lint:ci             # biome ci . (lint + format, CI mode)
+Format:     pnpm format              # biome check --write . && prettier --write "**/*.{md,yml,yaml,css}"
+Fmt check:  pnpm format:check        # biome check . && prettier --check
 Test:       pnpm test                # vitest run
 Coverage:   pnpm test:coverage       # vitest run --coverage
 Dead code:  pnpm knip                # knip
