@@ -9,7 +9,7 @@
   "enabledPlugins": {
     "agent-skills@addy-agent-skills": true,
     "superpowers@claude-plugins-official": false,
-    "caveman@caveman": false,
+    "caveman@caveman": true,
     "chrome-devtools-mcp@claude-plugins-official": true,
     "vercel@claude-plugins-official": true
   },
