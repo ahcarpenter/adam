@@ -23,6 +23,8 @@
   "dependencies": {
     "ai": "^7.0.38",
     "eve": "^0.31.3",
+    "winston": "^3.19.0",
+    "winston-transport": "^4.9.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
