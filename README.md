@@ -53,11 +53,14 @@ at startup); production fails fast on an invalid environment.
 
 `agent/instrumentation.ts` is the single wiring point:
 
-- **Logs** — winston's default logger is configured at startup (JSON console +
-  OTel bridge). Every authored file logs through `import winston from
-"winston"`; records emitted inside a span carry trace/span ids into PostHog.
-- **Traces** — `BraintrustExporter({ filterAISpans: true })`: only AI spans
-  reach Braintrust.
+- **Logs** — `ensureLogger()` bootstraps each process's winston default
+  logger (JSON console + OTel bridge to PostHog Logs). Any authored file logs
+  through `import winston from "winston"`; records emitted inside a span
+  carry trace/span ids.
+- **Traces** — two span processors: `BraintrustExporter({ filterAISpans:
+true })` sends only AI spans to Braintrust; `PostHogTraceExporter` sends
+  agent traces/generations to PostHog LLM analytics, linked to the
+  authenticated user via `posthog.distinct_id`.
 
 ## Upstash capabilities
 
