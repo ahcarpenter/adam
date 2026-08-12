@@ -1,11 +1,11 @@
 import { openai } from "@ai-sdk/openai";
 import { defineAgent } from "eve";
-
-const model = process.env.OPENAI_MODEL;
-if (!model) throw new Error("OPENAI_MODEL is required (see env.example)");
+import { parseEnv } from "./lib/env";
 
 export default defineAgent({
-  model: openai(model),
+  // Full-environment validation at the earliest module: an incomplete
+  // environment fails startup in every mode, local dev included.
+  model: openai(parseEnv().OPENAI_MODEL),
   build: {
     // Keep @vercel/otel external: its prebuilt dist contains a direct eval
     // that trips rolldown's [EVAL] warning when bundled.

@@ -46,8 +46,9 @@ Copy `env.example` to `.env.local` and fill in:
 | `POSTHOG_HOST`                                        | PostHog region host (defaults to `https://us.i.posthog.com`) |
 | `POSTHOG_PROJECT_TOKEN`                               | Log export                                                   |
 
-Local dev degrades gracefully without these (console-only logging, a warning
-at startup); production fails fast on an invalid environment.
+Startup fails fast on an invalid environment in every mode, local dev
+included (`POSTHOG_HOST` is the only optional variable — it defaults to the
+US cloud host).
 
 ## Observability design
 

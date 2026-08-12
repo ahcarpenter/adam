@@ -1,21 +1,22 @@
+import { logs } from "@opentelemetry/api-logs";
+import { OpenTelemetryTransportV3 } from "@opentelemetry/winston-transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import winston from "winston";
 import TransportStream from "winston-transport";
-import { configureDefaultLogger, ensureLogger } from "./logger";
+import { validEnv } from "./env.fixtures";
+import {
+  configureDefaultLogger,
+  defaultTransports,
+  ensureLogger,
+} from "./logger";
 
-const validEnv = {
-  OPENAI_API_KEY: "sk-test",
-  OPENAI_MODEL: "gpt-5",
-  UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
-  UPSTASH_REDIS_REST_TOKEN: "token",
-  BRAINTRUST_API_KEY: "key",
-  POSTHOG_PROJECT_TOKEN: "phc_token",
-};
-
-function defaultTransports(): unknown[] {
-  return (winston as unknown as { default: { transports: unknown[] } }).default
-    .transports;
-}
+// The OTLP exporter is the network boundary: mocking it keeps ensureLogger
+// tests from constructing a real exporter aimed at PostHog while still
+// asserting the exact endpoint and credentials it would be built with.
+const otlpLogExporter = vi.hoisted(() => vi.fn());
+vi.mock("@opentelemetry/exporter-logs-otlp-http", () => ({
+  OTLPLogExporter: otlpLogExporter,
+}));
 
 class MemoryTransport extends TransportStream {
   public readonly records: Record<string, unknown>[] = [];
@@ -64,31 +65,27 @@ describe("configureDefaultLogger", () => {
     expect(lastRecordOf(memory).message).toBe("kept");
   });
 
-  it("falls back to LOG_LEVEL, then to info", () => {
+  it("falls back to LOG_LEVEL when no level option is given", () => {
     vi.stubEnv("LOG_LEVEL", "error");
     configureDefaultLogger({ extraTransports: [memory] });
     winston.warn("dropped");
     winston.error("kept");
     expect(memory.records).toHaveLength(1);
+    expect(lastRecordOf(memory).message).toBe("kept");
+  });
 
-    vi.unstubAllEnvs();
-    delete process.env.LOG_LEVEL;
+  it("defaults to info when neither option nor LOG_LEVEL is set", () => {
+    vi.stubEnv("LOG_LEVEL", undefined);
     configureDefaultLogger({ extraTransports: [memory] });
     winston.info("visible at default level");
     expect(lastRecordOf(memory).message).toBe("visible at default level");
   });
 
   it("defaults to a single console transport when no extras are given", () => {
-    const configureSpy = vi.spyOn(winston, "configure");
     configureDefaultLogger();
 
-    const transports = configureSpy.mock.calls.at(-1)?.[0]?.transports;
-    expect(Array.isArray(transports)).toBe(true);
-    expect(transports).toHaveLength(1);
-    expect((transports as TransportStream[])[0]).toBeInstanceOf(
-      winston.transports.Console,
-    );
-    configureSpy.mockRestore();
+    expect(defaultTransports()).toHaveLength(1);
+    expect(defaultTransports()[0]).toBeInstanceOf(winston.transports.Console);
   });
 
   it("serializes errors with stack traces", () => {
@@ -102,8 +99,18 @@ describe("configureDefaultLogger", () => {
 });
 
 describe("ensureLogger", () => {
+  beforeEach(() => {
+    otlpLogExporter.mockClear();
+    // Keeps the process-global logger provider out of the test run while
+    // still observing that ensureLogger registers one.
+    vi.spyOn(logs, "setGlobalLoggerProvider").mockImplementation(
+      (provider) => provider,
+    );
+  });
+
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   it("is a no-op when the default logger already has transports", () => {
@@ -115,17 +122,26 @@ describe("ensureLogger", () => {
     expect(memory.records.at(-1)?.message).toBe("still captured");
   });
 
-  it("configures console plus OTel bridge when the environment is complete", () => {
+  it("configures console plus a PostHog OTel bridge when the environment is complete", () => {
     for (const [key, value] of Object.entries(validEnv)) vi.stubEnv(key, value);
     winston.configure({ transports: [] });
     ensureLogger();
+
     expect(defaultTransports()).toHaveLength(2);
+    expect(defaultTransports()[1]).toBeInstanceOf(OpenTelemetryTransportV3);
+    expect(otlpLogExporter).toHaveBeenCalledWith({
+      url: "https://us.i.posthog.com/i/v1/logs",
+      headers: { Authorization: "Bearer phc_token" },
+    });
+    expect(logs.setGlobalLoggerProvider).toHaveBeenCalledTimes(1);
   });
 
-  it("falls back to console-only logging on incomplete environment", () => {
+  it("throws on an incomplete environment", () => {
+    vi.stubEnv("BRAINTRUST_API_KEY", undefined);
     winston.configure({ transports: [] });
-    ensureLogger();
-    expect(defaultTransports()).toHaveLength(1);
-    expect(defaultTransports()[0]).toBeInstanceOf(winston.transports.Console);
+    expect(() => ensureLogger()).toThrow(/Invalid environment/);
+    expect(defaultTransports()).toHaveLength(0);
+    expect(otlpLogExporter).not.toHaveBeenCalled();
+    expect(logs.setGlobalLoggerProvider).not.toHaveBeenCalled();
   });
 });
