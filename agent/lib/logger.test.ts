@@ -1,7 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import winston from "winston";
 import TransportStream from "winston-transport";
-import { configureDefaultLogger } from "./logger";
+import { configureDefaultLogger, ensureLogger } from "./logger";
+
+const validEnv = {
+  OPENAI_API_KEY: "sk-test",
+  OPENAI_MODEL: "gpt-5",
+  UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
+  UPSTASH_REDIS_REST_TOKEN: "token",
+  BRAINTRUST_API_KEY: "key",
+  POSTHOG_PROJECT_TOKEN: "phc_token",
+};
+
+function defaultTransports(): unknown[] {
+  return (winston as unknown as { default: { transports: unknown[] } }).default
+    .transports;
+}
 
 class MemoryTransport extends TransportStream {
   public readonly records: Record<string, unknown>[] = [];
@@ -84,5 +98,34 @@ describe("configureDefaultLogger", () => {
     const record = lastRecordOf(memory);
     expect(record.message).toBe("boom");
     expect(record.stack).toEqual(expect.stringContaining("Error: boom"));
+  });
+});
+
+describe("ensureLogger", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("is a no-op when the default logger already has transports", () => {
+    const memory = new MemoryTransport();
+    configureDefaultLogger({ extraTransports: [memory] });
+    ensureLogger();
+    expect(defaultTransports()).toHaveLength(2);
+    winston.info("still captured");
+    expect(memory.records.at(-1)?.message).toBe("still captured");
+  });
+
+  it("configures console plus OTel bridge when the environment is complete", () => {
+    for (const [key, value] of Object.entries(validEnv)) vi.stubEnv(key, value);
+    winston.configure({ transports: [] });
+    ensureLogger();
+    expect(defaultTransports()).toHaveLength(2);
+  });
+
+  it("falls back to console-only logging on incomplete environment", () => {
+    winston.configure({ transports: [] });
+    ensureLogger();
+    expect(defaultTransports()).toHaveLength(1);
+    expect(defaultTransports()[0]).toBeInstanceOf(winston.transports.Console);
   });
 });
