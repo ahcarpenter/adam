@@ -30,6 +30,22 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # tsc does not run eve's compiler, so extension contract breaks, tool
+      # discovery errors, and bundler failures are invisible to every other
+      # step here — a dependency bump can pass CI and fail only at deploy.
+      # The values are placeholders: agent.ts validates the environment at
+      # module load, which discovery triggers, but nothing connects during a
+      # build.
+      - name: Build (eve compile + bundle)
+        run: pnpm build
+        env:
+          OPENAI_API_KEY: sk-ci
+          OPENAI_MODEL: gpt-5
+          UPSTASH_REDIS_REST_URL: https://ci.upstash.io
+          UPSTASH_REDIS_REST_TOKEN: ci-token
+          BRAINTRUST_API_KEY: ci-key
+          POSTHOG_PROJECT_TOKEN: phc_ci
+
       - name: Dead code
         run: pnpm knip
 
