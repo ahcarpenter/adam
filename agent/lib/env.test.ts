@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { parseEnv } from "./env";
 
 const validEnv = {
+  OPENAI_API_KEY: "sk-test",
+  OPENAI_MODEL: "gpt-5",
   UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
   UPSTASH_REDIS_REST_TOKEN: "token",
   BRAINTRUST_API_KEY: "key",
@@ -30,6 +32,8 @@ describe("parseEnv", () => {
   it("throws a readable error listing missing variables", () => {
     expect(() => parseEnv({})).toThrow(/Invalid environment/);
     expect(() => parseEnv({})).toThrow(/UPSTASH_REDIS_REST_URL/);
+    expect(() => parseEnv({})).toThrow(/OPENAI_API_KEY/);
+    expect(() => parseEnv({})).toThrow(/OPENAI_MODEL/);
   });
 
   it("rejects malformed URLs", () => {

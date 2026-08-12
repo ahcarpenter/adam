@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 const envSchema = z.object({
+  OPENAI_API_KEY: z.string().min(1),
+  OPENAI_MODEL: z.string().min(1),
   UPSTASH_REDIS_REST_URL: z.url(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
   BRAINTRUST_API_KEY: z.string().min(1),

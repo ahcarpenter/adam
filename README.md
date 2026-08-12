@@ -40,6 +40,7 @@ Copy `env.example` to `.env.local` and fill in:
 
 | Variable                                              | Purpose                                                      |
 | ----------------------------------------------------- | ------------------------------------------------------------ |
+| `OPENAI_API_KEY` / `OPENAI_MODEL`                     | Agent model (`@ai-sdk/openai` in `agent/agent.ts`)           |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Memory, RAG, chat history, rate limiting, tool cache         |
 | `BRAINTRUST_API_KEY`                                  | AI trace export                                              |
 | `POSTHOG_HOST`                                        | PostHog region host (defaults to `https://us.i.posthog.com`) |
