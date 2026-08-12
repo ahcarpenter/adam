@@ -10,20 +10,33 @@
     "build": "eve build",
     "dev": "eve dev",
     "start": "eve start",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write . && prettier --write \"**/*.{md,yml,yaml,css}\"",
+    "format:check": "biome ci . && prettier --check \"**/*.{md,yml,yaml,css}\"",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "knip": "knip",
+    "prepare": "husky"
   },
   "dependencies": {
-    "@vercel/connect": "0.4.3",
     "ai": "^7.0.38",
     "eve": "^0.31.3",
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.7",
     "@types/node": "24.x",
-    "typescript": "7.0.2"
+    "@vitest/coverage-v8": "^4.1.10",
+    "husky": "^9.1.7",
+    "knip": "^6.32.1",
+    "lint-staged": "^17.3.0",
+    "prettier": "^3.9.6",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": "24.x"
   }
-
 }

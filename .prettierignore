@@ -1,0 +1,6 @@
+# Prettier owns only md/yml/yaml/css (Biome owns TS/JS/JSON — scopes must stay disjoint)
+node_modules
+.eve
+.output
+.vercel
+pnpm-lock.yaml
