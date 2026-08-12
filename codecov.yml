@@ -15,5 +15,4 @@ ignore:
   - "agent/instrumentation.ts"
   - "agent/channels/**"
   - "agent/extensions/**"
-  - "agent/tools/**"
   - "**/*.test.ts"

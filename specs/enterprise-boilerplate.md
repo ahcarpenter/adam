@@ -64,15 +64,7 @@ agent/
   instrumentation.ts           # OTel: Braintrust traces + PostHog logs + winston setup
   channels/                    # channel(s) with createRateLimitAuth in auth pipeline
   extensions/
-    agentkit/
-      extension.ts             # agentkit({ chatHistory: true }) — no memory/search config
-      tools/recall_memory.ts   # disableTool() — memory owned by agent/tools/
-      tools/save_memory.ts     # disableTool()
-  tools/
-    recall_memory.ts           # defineMemoryRecallTool
-    save_memory.ts             # defineMemorySaveTool
-    search.ts                  # defineSearchTools(...).search over a minimal index schema
-    cached_example.ts          # defineCachedTool thin stub (pattern reference)
+    agentkit.ts                # agentkit({ memory, search, chatHistory }) — single wiring point
 lib/
   env.ts                       # zod-validated env vars
   logger.ts                    # winston config helper (used from instrumentation.ts)
@@ -147,12 +139,12 @@ POSTHOG_HOST (default https://us.i.posthog.com), POSTHOG_PROJECT_TOKEN
 
 ## Success Criteria
 
-1. `pnpm build` (eve build) succeeds; `eve info` lists: recall_memory, save_memory, search, cached_example tools + agentkit extension.
+1. `pnpm build` (eve build) succeeds; the compiled manifest lists the agentkit extension's `agentkit__recall_memory`/`agentkit__save_memory` tools plus dynamic chat-history and search tools.
 2. `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm knip`, `pnpm test:coverage` all pass locally and in CI.
 3. CI workflow green on GitHub; coverage report visible on Codecov.
 4. With env vars set, `eve dev` + one chat turn produces: (a) a trace in Braintrust containing only AI spans, (b) structured logs in PostHog carrying trace ids, (c) chat transcript persisted in Upstash Redis.
 5. Rate limit verified: exceeding the sliding window returns 403 on the channel.
-6. Second identical call to `cached_example` served from Redis cache (observable via log field or Redis key `agentkit:toolCache:*`).
+6. Removed (refactor decision): no shipped cached tool; `defineCachedTool` documented as the pattern for future expensive tools.
 7. Renovate opens its onboarding PR; lint-staged blocks a badly formatted commit.
 
 ## Open Questions
@@ -164,7 +156,8 @@ None.
 - 2026-08-12 (implementation): winston-sharing risk resolved — the server build externalizes winston to a single import, so the default logger configured in `instrumentation.ts` is the same instance tool files get from `import winston from "winston"`. No `@opentelemetry/api-logs` fallback needed.
 - 2026-08-12 (implementation): instrumentation degrades gracefully outside production — incomplete env logs a structured warning and skips exporters instead of crashing `eve dev`; production (`NODE_ENV`/`VERCEL_ENV=production`) still fails fast.
 - 2026-08-12 (implementation): rate limit over-limit responds **403 Forbidden** (ForbiddenError from `createRateLimitAuth`), not 429 as originally speculated. Success criterion 5 reads 403 accordingly.
-- 2026-08-12 (implementation): extension also registers dynamic `agentkit__search*` tools even without `search` config; disabled via `disableTool()` overrides alongside the memory ones so authored `agent/tools/search.ts` is the only RAG surface.
+- 2026-08-12 (implementation): extension also registers dynamic `agentkit__search*` tools even without `search` config; disabled via `disableTool()` overrides alongside the memory ones so authored `agent/tools/search.ts` is the only RAG surface. **Superseded by the refactor below.**
+- 2026-08-12 (refactor, user-directed): standalone tool files replaced by the extension configuration reference (https://upstash.com/docs/redis/sdks/agentkit/eve#extension-configuration-reference). `agent/extensions/agentkit.ts` now configures memory (`topK: 5, minScore: 1`), search (`documents` index), and `chatHistory: true`; the directory mount, `disableTool()` overrides, standalone `agent/tools/*` files, and their smoke tests are gone. `cached_example` (tool-caching stub) removed with them — tool caching via `defineCachedTool` remains documented but unshipped. Rate limiting via `createRateLimitAuth` from `@upstash/agentkit-eve` stays in `agent/channels/eve.ts`. Success criteria 1 and 6 adjusted accordingly.
 - 2026-08-12 (implementation): shared code lives in `agent/lib/` (eve's sanctioned import-only slot), not repo-root `lib/`. Env template is `env.example` (no leading dot) to stay outside `.env*` ignore/deny rules.
 
 - 2026-08-12: Spec approved. Codecov gate set to fail below 95% project coverage (was: informational).
