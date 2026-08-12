@@ -10,11 +10,12 @@ Success looks like: clone → `pnpm install` → set env vars → `eve dev` runs
 
 1. GitHub is the CI/CD host (remote is `github.com:ahcarpenter/adam`) → GitHub Actions for CI, Codecov via `codecov/codecov-action`, Renovate via the GitHub App with a repo config file.
 2. PostHog Cloud (US) receives logs and agent traces (LLM analytics); project token available as an env var. No product-analytics event capture wiring.
-3. Braintrust receives **only** AI spans (via the official `braintrustEveInstrumentation` integration); no non-AI spans, no logs.
+3. Braintrust receives **only** AI spans (via the official `braintrustEveInstrumentation` integration); no non-AI spans, no logs. Projects are per environment (`adam` / `adam-preview` / `adam-dev`), with evals in `adam-evals`.
 4. Deployment target is Vercel (`.vercel/` present); env vars managed with `vercel env`.
 5. Package manager is pnpm (lockfile present); Node 24 per `engines`.
 6. Unit tests are colocated (`*.test.ts` next to source); eve evals live in `evals/` (already aliased as `#evals/*`).
 7. Drizzle is **out of scope** (removed by decision).
+8. No OTLP **metrics** destination exists by default — neither PostHog nor Braintrust ingests them — so the metric pipeline is opt-in via `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
 → Correct any of these before approving.
 
@@ -34,7 +35,9 @@ Success looks like: clone → `pnpm install` → set env vars → `eve dev` runs
 | Log pipeline                | OTel Logs SDK → OTLP/HTTP → PostHog                | endpoint `<POSTHOG_HOST>/i/v1/logs`, `Authorization: Bearer <token>`; trace/span ids auto-correlated in span context |
 | Tracing                     | `@vercel/otel` via eve `agent/instrumentation.ts`  | `defineInstrumentation` + `registerOTel`                                                                             |
 | AI trace destination        | `braintrustEveInstrumentation` from `braintrust`   | native turn/step/tool capture; plus `agent/hooks/braintrust.ts` (`braintrustEveHook`)                                |
-| LLM analytics traces        | `PostHogTraceExporter` from `@posthog/ai`          | span processor in `instrumentation.ts`; `posthog.distinct_id` user linking                                           |
+| LLM analytics traces        | `PostHogSpanProcessor` from `@posthog/ai`          | span processor in `instrumentation.ts`; `posthog.distinct_id` user linking                                           |
+| Metrics                     | OTel metrics API + OTLP push exporter              | RED on turns/tools/throttling; off unless `OTEL_EXPORTER_OTLP_ENDPOINT` is set                                       |
+| Failure logging             | `agent/hooks/observability.ts`                     | turn/step/session failures and tool-call results; logic in `agent/lib/observability.ts`                              |
 | Memory + RAG + chat history | `@upstash/agentkit-eve-extension`                  | `agent/extensions/agentkit.ts` — `agentkit({ memory, search, chatHistory })`, single wiring point                    |
 | Rate limiting               | `createRateLimitAuth` from `@upstash/agentkit-eve` | in channel auth pipeline, sliding window                                                                             |
 | Tool caching                | `defineCachedTool` from `@upstash/agentkit-eve`    | documented pattern for future expensive tools; no shipped stub                                                       |
@@ -69,9 +72,17 @@ agent/
     agentkit.ts                # agentkit({ memory, search, chatHistory }) — single wiring point
   hooks/
     braintrust.ts              # braintrustEveHook (subagent/tool capture)
+    observability.ts           # failure logging + RED metrics off the event stream
   lib/                         # shared authored code (eve's import-only slot)
+    diagnostics.ts             # OTel diag logger + neverThrow telemetry containment
     env.ts                     # zod-validated env vars
+    environment.ts             # deployment environment + per-env Braintrust project
     logger.ts                  # winston config + self-configuring ensureLogger()
+    metrics.ts                 # meter bootstrap + RED instruments
+    observability.ts           # hook event handlers (testable half of the hook)
+    observed-auth.ts           # rate-limit rejection logging/counting wrapper
+    resource.ts                # service.name + deployment.environment.name
+    shutdown.ts                # beforeExit drain for the log/metric providers
     step-attribution.ts        # posthog.distinct_id user attribution for steps
 evals/                         # eve evals (existing alias)
 specs/                         # this spec
@@ -85,10 +96,10 @@ codecov.yml
 .lintstagedrc.json + .husky/pre-commit (extend existing)
 ```
 
-**Hard constraint (eve runtime):** tool/channel/extension files are snapshotted and resolve **package imports only** — they cannot import `agent/lib/` or other `agent/` modules. Consequences:
+**Hard constraint (eve runtime):** **tool** files are snapshotted and resolve **package imports only** — they cannot import `agent/lib/` or other `agent/` modules. Channels, extensions, hooks, and `instrumentation.ts` are bundled normally and may import `agent/lib/` (verified: `pnpm build` with `agent/channels/eve.ts` importing three lib modules produces zero discovery diagnostics). Consequences:
 
 - Per-tool config (e.g. `userId` resolvers) is repeated in each tool file, not shared.
-- Logging everywhere goes through winston's default logger (`import winston from "winston"`). The eve runtime executes authored modules in separate workers, so no single startup call can configure them all — each process bootstraps once via the self-configuring `ensureLogger()` in `agent/lib/logger.ts`.
+- Logging everywhere goes through winston's default logger (`import winston from "winston"`). The eve runtime executes authored modules in separate workers, so no single startup call can configure them all — each process bootstraps once via the self-configuring `ensureLogger()` in `agent/lib/logger.ts`, and `ensureMetrics()` alongside it where metrics are recorded.
 
 ## Code Style
 
@@ -118,20 +129,25 @@ Conventions:
 ## Testing Strategy
 
 - **Vitest** for unit tests, colocated `*.test.ts`. Coverage via v8 provider.
-- Skeleton ships tests for: `agent/lib/env.ts` (valid/invalid env), `agent/lib/logger.ts` (shape of structured output), and `agent/lib/step-attribution.ts` (principal selection and context merging).
+- Skeleton ships tests for every `agent/lib/` module: env parsing (including the closed `LOG_LEVEL` set), logger bootstrap (structured output, resource, level, drain registration), environment/project resolution, telemetry resource, diag installation, exit drain, metric bootstrap and instruments, the hook event handlers, and the rate-limit wrapper. Wiring files (`instrumentation.ts`, `channels/`, `extensions/`, `hooks/`) stay excluded from coverage, which is why each of them is a thin dispatcher over a tested `lib/` module.
 - **eve evals** directory remains the home for model-behavior checks (out of scope to populate here beyond what scaffolding exists).
 - Coverage uploaded to Codecov on every CI run; `codecov.yml` **fails the check when project coverage < 95%**. Wiring-only files that cannot meaningfully execute under unit tests (e.g. `agent/instrumentation.ts`) may be excluded from coverage — any exclusion is listed explicitly in `codecov.yml`/`vitest.config.ts` and justified in a comment.
 - CI order: install → biome ci → prettier check → typecheck → knip → vitest coverage → codecov upload.
 
 ## Observability Design
 
-One `agent/instrumentation.ts` is the single wiring point:
+Every signal answers one of five on-call questions, listed under "Observability design" in the README: are turns failing and why, how slow is a turn, are tool calls failing, are callers being throttled, what did one conversation do. Anything that answers none of them does not get added.
+
+`agent/instrumentation.ts` wires traces; logs and metrics bootstrap per worker process:
 
 1. `registerOTel` with `serviceName: agentName`.
-2. **AI traces:** the official Braintrust eve integration (`braintrustEveInstrumentation` as the instrumentation base, plus `agent/hooks/braintrust.ts`) captures turns, steps, tool calls, and subagent interactions natively in Braintrust.
-3. **LLM analytics:** a `PostHogTraceExporter` span processor sends agent traces/generations to PostHog, linked to the authenticated user via `posthog.distinct_id` (`agent/lib/step-attribution.ts`, merged into the `step.started` handler).
-4. **Logs:** OTel `LoggerProvider` + `BatchLogRecordProcessor` + `OTLPLogExporter` pointed at `${POSTHOG_HOST}/i/v1/logs` with an `Authorization: Bearer ${POSTHOG_PROJECT_TOKEN}` header, bootstrapped per process by `ensureLogger()`.
+2. **AI traces:** the official Braintrust eve integration (`braintrustEveInstrumentation` as the instrumentation base, plus `agent/hooks/braintrust.ts`) captures turns, steps, tool calls, and subagent interactions natively in Braintrust, into a per-environment project (`adam` / `adam-preview` / `adam-dev`; evals report to `adam-evals`).
+3. **LLM analytics:** a `PostHogSpanProcessor` sends agent traces/generations to PostHog, linked to the authenticated user via `posthog.distinct_id` (`agent/lib/step-attribution.ts`, merged into the `step.started` handler). It batches; a `SimpleSpanProcessor` would POST once per span on the request path. `"auto"` sits alongside it in `spanProcessors` to keep `@vercel/otel`'s default export mechanism, which is the only path accepting non-AI spans; `traceChannelRequests: true` then gives request-level visibility there.
+4. **Logs:** OTel `LoggerProvider` + `BatchLogRecordProcessor` + `OTLPLogExporter` pointed at `${POSTHOG_HOST}/i/v1/logs` with an `Authorization: Bearer ${POSTHOG_PROJECT_TOKEN}` header, bootstrapped per process by `ensureLogger()`, carrying an explicit resource (`service.name`, `deployment.environment.name`) and drained on `beforeExit`.
 5. **winston:** JSON console transport plus `@opentelemetry/winston-transport` bridging into the OTel logs pipeline → PostHog. All logs — general and trace-correlated — land in PostHog; trace/span ids ride along automatically when logging inside an active span.
+6. **Emitters:** `agent/hooks/observability.ts` logs turn/session failures at `error`, step failures and failed tool calls at `warn`, each line carrying `sessionId`, a stable `event` name, and the event's `details` payload. Handlers run inside `neverThrow` — eve escalates a thrown hook to `turn.failed`, and one on the failure cascade to `session.failed`.
+7. **Metrics:** `ensureMetrics()` registers a meter provider only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set (no OTLP-metrics destination exists in this stack by default). Instruments: `agent.turns`, `agent.turn.duration`, `agent.tool_calls`, `agent.rate_limit.rejections`, all with closed attribute sets.
+8. **Pipeline failures:** `diag` is wired to the console logger at `ERROR`, so a rejected export surfaces instead of being swallowed. Deliberately not winston — a log-export failure reported through winston would feed the exporter that just failed.
 
 Env vars (all validated in `agent/lib/env.ts`):
 
@@ -140,6 +156,9 @@ OPENAI_API_KEY, OPENAI_MODEL
 UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 BRAINTRUST_API_KEY
 POSTHOG_HOST (default https://us.i.posthog.com), POSTHOG_PROJECT_TOKEN
+LOG_LEVEL (default info; closed winston set)
+OTEL_SERVICE_NAME (default adam)
+OTEL_EXPORTER_OTLP_ENDPOINT (optional; metrics stay off without it)
 ```
 
 ## Boundaries
@@ -153,10 +172,11 @@ POSTHOG_HOST (default https://us.i.posthog.com), POSTHOG_PROJECT_TOKEN
 1. `pnpm build` (eve build) succeeds; the compiled manifest lists the agentkit extension's `agentkit__recall_memory`/`agentkit__save_memory` tools plus dynamic chat-history and search tools.
 2. `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm knip`, `pnpm test:coverage` all pass locally and in CI.
 3. CI workflow green on GitHub; coverage report visible on Codecov.
-4. With env vars set, `eve dev` + one chat turn produces: (a) a trace in Braintrust containing only AI spans, (b) structured logs in PostHog carrying trace ids, (c) chat transcript persisted in Upstash Redis.
-5. Rate limit verified: exceeding the sliding window returns 403 on the channel.
+4. With env vars set, `eve dev` + one chat turn produces: (a) a trace in the `adam-dev` Braintrust project containing only AI spans, (b) chat transcript persisted in Upstash Redis. A healthy turn emits no log line by design — the trace describes it.
+5. Rate limit verified: exceeding the sliding window returns 403 on the channel **and** emits one `event=rate_limit_rejected` log line.
 6. Removed (refactor decision): no shipped cached tool; `defineCachedTool` documented as the pattern for future expensive tools.
 7. Renovate opens its onboarding PR; lint-staged blocks a badly formatted commit.
+8. A forced failure is diagnosable from telemetry alone: the `turn_failed`/`tool_call_failed` line in PostHog Logs carries `sessionId`, `code`, and structured fields, and locates the matching Braintrust trace.
 
 ## Open Questions
 
@@ -180,3 +200,14 @@ None.
 - 2026-08-12: Ex-Open-Question 1 resolved. Transcript capture is extension-only (`hooks/chat_history.mjs`), so the extension stays. Its default memory tools are removed via eve directory mount: `agent/extensions/agentkit/extension.ts` + `disableTool()` overrides in `agent/extensions/agentkit/tools/{recall,save}_memory.ts` (eve docs "Override a contribution"). Extension `search` config omitted, so no search-tool conflict. Standalone `agent/tools/` files own memory+RAG per https://upstash.com/docs/redis/sdks/agentkit/eve#memory-and-rag-as-individual-tool-files.
 - 2026-08-12 (user-directed): no degraded mode — an incomplete environment fails fast in every mode, local dev included. `parseEnv()` throws from `agent.ts` (full-environment validation at the earliest module, replacing the hand-rolled `OPENAI_MODEL` check), `ensureLogger()`, and the `instrumentation.ts` setup; the `NODE_ENV`/`VERCEL_ENV` production gate and both console-only fallbacks are removed.
 - 2026-08-12 (docs): spec body swept to the current state after a ubiquitous-language audit — superseded design removed from the body (`BraintrustExporter`/`filterAISpans`, standalone tool files, repo-root `lib/`, `?token=` log endpoint, shipped cached-tool stub); this log remains the history.
+- 2026-08-12 (observability audit): three wired paths were found carrying no data. (a) `traceChannelRequests: true` created SERVER spans that no backend accepted — `PostHogTraceExporter` forwards only `gen_ai.`/`llm.`/`ai.`/`traceloop.`-prefixed spans and Braintrust captures through its own SDK, so the spans cost latency, reached nothing, and left exported AI spans parented to a span absent from the backend. Root cause was `spanProcessors: [posthog]` replacing `@vercel/otel`'s default export mechanism; `"auto"` is now listed alongside it, restoring the only path that accepts non-AI spans (Vercel's tracing integration, or an OTLP exporter from `OTEL_EXPORTER_OTLP_*` — so the metrics endpoint doubles as a span destination). `traceChannelRequests` stays `true` on that basis. **Amendment:** briefly set to `false` when the user's first call was to leave `"auto"` out; reversed in the same pass when they opted back in. (b) `SimpleSpanProcessor` POSTed once per span on the request path, several times per turn; replaced with `PostHogSpanProcessor`, which batches and is what `@posthog/ai` recommends wherever a `SpanProcessor` is accepted. `@opentelemetry/sdk-trace-base` dropped as a direct dep. (c) The standalone `LoggerProvider` had no resource, so PostHog Logs received `service.name=unknown_service:node`, and nothing drained its batch queue. Both fixed via `agent/lib/resource.ts` and `agent/lib/shutdown.ts` (`beforeExit` only — a SIGTERM listener would suppress Node's default handling and race the runtime's own shutdown; a hard kill still loses up to one batch interval).
+- 2026-08-12 (observability audit): `LOG_LEVEL` was read raw from `process.env`. winston resolves a level by map lookup and drops every record for one it cannot resolve, so `LOG_LEVEL=warning` was a silent total logging outage. Now a closed `z.enum` in `agent/lib/env.ts`, rejected at startup like every other variable. `OTEL_SERVICE_NAME` (default `adam`) and optional `OTEL_EXPORTER_OTLP_ENDPOINT` joined the schema.
+- 2026-08-12 (observability audit): OTel `diag` was unset, so exporter and batch-processor failures — a bad token, the wrong region host, a 4xx from ingest — were swallowed entirely; the pipeline could be dead with no signal. `agent/lib/diagnostics.ts` installs the console diag logger at `ERROR`. Deliberately not winston: a log-export failure reported through winston would feed the exporter that just failed.
+- 2026-08-12 (observability audit): reversing part of the 2026-08-12 PostHog-exporter decision, which removed the lifecycle hook on the grounds that "traces cover turn/tool lifecycle; failures alert from traces". That left the log pipeline with zero emitters — unexercised, unverifiable, and unable to satisfy the "structured logs in PostHog" criterion. `agent/hooks/observability.ts` returns, narrowed to failures and throughput: turn/session failures at `error`, step failures and failed tool calls at `warn`, no line at all for a healthy turn. Handlers live in `agent/lib/observability.ts` so they are covered by tests.
+- 2026-08-12 (observability audit, user-directed): metrics added through the OTel metrics API with a `PeriodicExportingMetricReader`, active only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set — neither PostHog nor Braintrust ingests OTLP metrics, so this stack has no default destination and the instruments are no-ops until one is configured. Instruments: `agent.turns`, `agent.turn.duration` (seconds, buckets tuned for turns, not HTTP handlers), `agent.tool_calls`, `agent.rate_limit.rejections`. Attributes are closed sets only. Turn duration is measured from `meta.at` on the stream envelope rather than a local clock, held in a 1000-entry bounded map; a turn whose start was observed in another worker is still counted, just without a duration sample. Added deps: `@opentelemetry/sdk-metrics`, `@opentelemetry/exporter-metrics-otlp-http`, `@opentelemetry/resources`.
+- 2026-08-12 (observability audit): rate-limit rejections were invisible in every backend — they happen in the auth walk before a session exists, so no AI span is produced and the request span is dropped per (a) above. `agent/lib/observed-auth.ts` wraps the limiter, counting and logging only `ForbiddenError` so a Redis outage is not miscounted as throttling. Note the identifier remains the raw `x-forwarded-for` header: spoofable, and a multi-hop chain keys separately. Out of scope for this pass, but it makes the throttling signal a floor rather than a true count.
+- 2026-08-12 (observability audit, user-directed): telemetry split by environment. Braintrust projects are `adam` / `adam-preview` / `adam-dev`, resolved from `VERCEL_ENV` (`agent/lib/environment.ts`); evals report to `adam-evals`; logs and metrics carry `deployment.environment.name`. This reads the environment but does not branch behavior on it, so the 2026-08-12 "no degraded mode" decision holds — startup still fails fast identically everywhere. PostHog separation is left to per-environment project tokens.
+- 2026-08-12 (observability audit, user-directed): `recordInputs`/`recordOutputs` stay on, now stated literally in `agent/instrumentation.ts` instead of inherited from the AI SDK default, with the data flow spelled out — both Braintrust and PostHog receive full message history and model output. Sampling likewise stays at 100%, with `OTEL_TRACES_SAMPLER` documented as the knob when volume makes that expensive.
+- 2026-08-12 (observability audit): the "tool/channel/extension files are snapshotted, package imports only" constraint was too broad. Verified by build: `agent/channels/eve.ts` importing three `agent/lib/` modules produces a clean `pnpm build` with zero discovery diagnostics, and the new hook is discovered normally. The constraint is **tool files only**; the body has been corrected.
+- 2026-08-12 (review, user-directed): failure `details` is logged after all. The initial pass withheld it as a possible carrier of model input; with `recordInputs`/`recordOutputs` already sending full message content to Braintrust and PostHog traces, withholding it from the log line bought no confidentiality and cost the first useful field an on-call engineer reaches for. Consequence recorded plainly: PostHog Logs is a content store, not a metadata store.
+- 2026-08-12 (review): four defects found reviewing the audit changes. (1) **Critical** — every hook handler called winston unguarded while subscribed to failure-cascade events, so per eve's hook contract a throwing transport would surface as `turn.failed` and escalate to `session.failed`: instrumentation able to end the session it describes. All handlers now run inside `neverThrow` (`agent/lib/diagnostics.ts`), which reports through `diag` rather than winston, since winston is one of the things that can be failing. (2) `observeRateLimit` ran its metric and log before rethrowing, so a telemetry throw replaced the limiter's 403 with a 500; the same guard now wraps them and the original error always propagates. (3) `turn.cancelled` was unsubscribed, so cancelled turns never released their entry in the duration-tracking map — under cancellation load the 1000-entry cap would evict _live_ turn starts and silently thin the histogram. Cancellation is now a third `TurnOutcome`, which both releases the entry and keeps the turn rate honest. (4) `ensureMetrics` latched `started = true` before `parseEnv()`, permanently unmetering a process whose first call threw; the flag now follows a successful parse, matching `ensureLogger`'s retryable guard.
