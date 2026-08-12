@@ -9,4 +9,4 @@ Always check against the latest documentation when evaluating approaches via /co
 
 /caveman:caveman lite
 
-Be sure to keep /using-agent-skills active
+Be sure to keep /agent-skills:using-agent-skills active
