@@ -16,9 +16,6 @@ export default defineConfig({
         "agent/instrumentation.ts",
         "agent/channels/**",
         "agent/extensions/**",
-        // Self-contained Upstash tool definitions: execute needs live Redis;
-        // shape is verified by tests/tools.test.ts import-smoke tests.
-        "agent/tools/**",
       ],
       thresholds: {
         lines: 95,
