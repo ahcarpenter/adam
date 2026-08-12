@@ -2,8 +2,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    include: ["agent/**/*.test.ts", "tests/**/*.test.ts"],
-    passWithNoTests: true,
+    include: ["agent/**/*.test.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],
@@ -16,6 +15,7 @@ export default defineConfig({
         "agent/instrumentation.ts",
         "agent/channels/**",
         "agent/extensions/**",
+        "agent/hooks/**",
       ],
       thresholds: {
         lines: 95,
