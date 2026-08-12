@@ -1,8 +1,7 @@
 import agentkit from "@upstash/agentkit-eve-extension";
 import { s } from "@upstash/redis";
 
-// Single wiring point for Upstash AgentKit: long-term memory, RAG over a
-// Redis Search index, and durable chat history. userId defaults to the
+// Single wiring point for Upstash AgentKit. userId defaults to the
 // verified principal, then the session id. Rate limiting stays in
 // agent/channels/eve.ts (createRateLimitAuth from @upstash/agentkit-eve).
 export default agentkit({

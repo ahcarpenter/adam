@@ -40,16 +40,14 @@ export default defineInstrumentation({
   // parents the turn trace, giving PostHog request-level visibility.
   traceChannelRequests: true,
   setup: (context) => {
-    // Logs: JSON console + OTel bridge to PostHog Logs, configured per
-    // process by ensureLogger() (the eve runtime runs authored modules in
-    // separate workers, so each bootstraps itself).
+    // The eve runtime runs authored modules in separate workers, so each
+    // process bootstraps its own logger.
     ensureLogger();
 
     // Fail fast on an incomplete environment — in every mode, local dev
     // included (no degraded console-only fallback).
     const env = parseEnv();
 
-    // Braintrust-native capture (initLogger).
     braintrust.setup?.(context);
 
     // Agent traces and generations land in PostHog LLM analytics,
