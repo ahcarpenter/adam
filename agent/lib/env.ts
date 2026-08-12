@@ -1,5 +1,23 @@
 import { z } from "zod";
 
+/**
+ * winston's default (npm) levels. The set is closed here because winston
+ * resolves a level by map lookup — `winston-transport` compares
+ * `levels[configured] >= levels[record]`, and an unrecognized key yields
+ * `undefined`, so `undefined >= n` is false and *every* record is dropped
+ * without a warning. A typo like `LOG_LEVEL=warning` would otherwise be a
+ * silent logging outage.
+ */
+const logLevels = [
+  "error",
+  "warn",
+  "info",
+  "http",
+  "verbose",
+  "debug",
+  "silly",
+] as const;
+
 const envSchema = z.object({
   OPENAI_API_KEY: z.string().min(1),
   OPENAI_MODEL: z.string().min(1),
@@ -8,6 +26,20 @@ const envSchema = z.object({
   BRAINTRUST_API_KEY: z.string().min(1),
   POSTHOG_HOST: z.url().default("https://us.i.posthog.com"),
   POSTHOG_PROJECT_TOKEN: z.string().min(1),
+  LOG_LEVEL: z.enum(logLevels).default("info"),
+  /**
+   * `service.name` on exported logs and metrics. Keep it equal to the eve
+   * agent name (this package's `name`), which is what traces are tagged
+   * with; `@vercel/otel` reads the same variable for the trace pipeline, so
+   * setting it moves all three signals together.
+   */
+  OTEL_SERVICE_NAME: z.string().min(1).default("adam"),
+  /**
+   * Metrics destination. Neither PostHog nor Braintrust ingests OTLP
+   * metrics, so the metric pipeline stays off until this points at a
+   * collector or metrics backend. Absent, the instruments are no-ops.
+   */
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

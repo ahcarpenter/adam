@@ -12,10 +12,17 @@ import {
 
 // The OTLP exporter is the network boundary: mocking it keeps ensureLogger
 // tests from constructing a real exporter aimed at PostHog while still
-// asserting the exact endpoint and credentials it would be built with.
+// asserting the exact endpoint and credentials it would be built with. The
+// SDK is mocked alongside it so the provider's resource is observable.
 const otlpLogExporter = vi.hoisted(() => vi.fn());
+const batchProcessor = vi.hoisted(() => vi.fn());
+const loggerProvider = vi.hoisted(() => vi.fn());
 vi.mock("@opentelemetry/exporter-logs-otlp-http", () => ({
   OTLPLogExporter: otlpLogExporter,
+}));
+vi.mock("@opentelemetry/sdk-logs", () => ({
+  BatchLogRecordProcessor: batchProcessor,
+  LoggerProvider: loggerProvider,
 }));
 
 class MemoryTransport extends TransportStream {
@@ -65,19 +72,13 @@ describe("configureDefaultLogger", () => {
     expect(lastRecordOf(memory).message).toBe("kept");
   });
 
-  it("falls back to LOG_LEVEL when no level option is given", () => {
+  it("defaults to info, ignoring a raw LOG_LEVEL in the environment", () => {
+    // The level reaches this function through parseEnv (see ensureLogger),
+    // which rejects a value winston cannot resolve.
     vi.stubEnv("LOG_LEVEL", "error");
     configureDefaultLogger({ extraTransports: [memory] });
-    winston.warn("dropped");
-    winston.error("kept");
-    expect(memory.records).toHaveLength(1);
-    expect(lastRecordOf(memory).message).toBe("kept");
-  });
-
-  it("defaults to info when neither option nor LOG_LEVEL is set", () => {
-    vi.stubEnv("LOG_LEVEL", undefined);
-    configureDefaultLogger({ extraTransports: [memory] });
     winston.info("visible at default level");
+
     expect(lastRecordOf(memory).message).toBe("visible at default level");
   });
 
@@ -101,6 +102,8 @@ describe("configureDefaultLogger", () => {
 describe("ensureLogger", () => {
   beforeEach(() => {
     otlpLogExporter.mockClear();
+    batchProcessor.mockClear();
+    loggerProvider.mockClear();
     // Keeps the process-global logger provider out of the test run while
     // still observing that ensureLogger registers one.
     vi.spyOn(logs, "setGlobalLoggerProvider").mockImplementation(
@@ -109,6 +112,7 @@ describe("ensureLogger", () => {
   });
 
   afterEach(() => {
+    process.removeAllListeners("beforeExit");
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
@@ -133,7 +137,45 @@ describe("ensureLogger", () => {
       url: "https://us.i.posthog.com/i/v1/logs",
       headers: { Authorization: "Bearer phc_token" },
     });
+    expect(batchProcessor).toHaveBeenCalledWith({
+      exporter: expect.any(otlpLogExporter),
+    });
     expect(logs.setGlobalLoggerProvider).toHaveBeenCalledTimes(1);
+  });
+
+  it("names the service and environment on exported records", () => {
+    for (const [key, value] of Object.entries(validEnv)) vi.stubEnv(key, value);
+    vi.stubEnv("VERCEL_ENV", "preview");
+    winston.configure({ transports: [] });
+    ensureLogger();
+
+    expect(loggerProvider).toHaveBeenCalledWith({
+      resource: expect.objectContaining({
+        attributes: {
+          "service.name": "adam",
+          "deployment.environment.name": "preview",
+        },
+      }),
+      processors: [expect.any(batchProcessor)],
+    });
+  });
+
+  it("takes the winston level from the validated environment", () => {
+    for (const [key, value] of Object.entries(validEnv)) vi.stubEnv(key, value);
+    vi.stubEnv("LOG_LEVEL", "debug");
+    winston.configure({ transports: [] });
+    ensureLogger();
+
+    expect(winston.level).toBe("debug");
+  });
+
+  it("drains the provider before the process exits", () => {
+    for (const [key, value] of Object.entries(validEnv)) vi.stubEnv(key, value);
+    winston.configure({ transports: [] });
+    const before = process.listenerCount("beforeExit");
+    ensureLogger();
+
+    expect(process.listenerCount("beforeExit")).toBe(before + 1);
   });
 
   it("throws on an incomplete environment", () => {

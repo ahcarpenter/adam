@@ -1,11 +1,12 @@
-import { SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { PostHogTraceExporter } from "@posthog/ai/otel";
+import { PostHogSpanProcessor } from "@posthog/ai/otel";
 import { registerOTel } from "@vercel/otel";
 import { braintrustEveInstrumentation, initLogger } from "braintrust";
 import { defineState } from "eve/context";
 import { defineInstrumentation } from "eve/instrumentation";
 import { parseEnv } from "./lib/env";
+import { braintrustProject } from "./lib/environment";
 import { ensureLogger } from "./lib/logger";
+import { ensureMetrics } from "./lib/metrics";
 import {
   attributeStep,
   type EarlierStepStartedResult,
@@ -18,7 +19,9 @@ const braintrust = braintrustEveInstrumentation({
   defineState,
   setup: ({ agentName }) => {
     initLogger({
-      projectName: agentName,
+      // Per-environment project, so local and preview turns never land in
+      // the project on-call reads during an incident.
+      projectName: braintrustProject(agentName),
       apiKey: process.env.BRAINTRUST_API_KEY,
     });
   },
@@ -35,14 +38,25 @@ type BraintrustStepStartedInput = Parameters<
 export default defineInstrumentation({
   // Preserves recordInputs/recordOutputs and any future wrapper fields.
   ...braintrust,
+  // Stated rather than inherited: full message history and model output ride
+  // on every step span, to Braintrust and to PostHog. That is the debugging
+  // the boilerplate is built around, and it means both vendors hold whatever
+  // your users type. Set both to false before pointing this at regulated or
+  // otherwise sensitive traffic.
+  recordInputs: true,
+  recordOutputs: true,
   // Wraps each inbound channel HTTP request in a low-cardinality SERVER span
   // (route template + method only — no session ids, tokens, or bodies) that
-  // parents the turn trace, giving PostHog request-level visibility.
+  // parents the turn trace. PostHog's exporter drops it, forwarding only AI
+  // spans (`gen_ai.`/`llm.`/`ai.`/`traceloop.` prefixes); the "auto"
+  // processor below is what gives it, and every other non-AI span, a
+  // destination.
   traceChannelRequests: true,
   setup: (context) => {
     // The eve runtime runs authored modules in separate workers, so each
-    // process bootstraps its own logger.
+    // process bootstraps its own logger and meter.
     ensureLogger();
+    ensureMetrics();
 
     // Fail fast on an incomplete environment — in every mode, local dev
     // included (no degraded console-only fallback).
@@ -51,16 +65,25 @@ export default defineInstrumentation({
     braintrust.setup?.(context);
 
     // Agent traces and generations land in PostHog LLM analytics,
-    // alongside the app logs in PostHog Logs.
+    // alongside the app logs in PostHog Logs. PostHog's own processor
+    // batches; a SimpleSpanProcessor would POST once per span, on the
+    // request path, several times per turn.
+    //
+    // "auto" keeps @vercel/otel's default export mechanism alongside it —
+    // naming any processor otherwise replaces it. It is the only path that
+    // accepts non-AI spans (channel requests, hook.resume, outgoing HTTP):
+    // Vercel's tracing integration when one is installed on the project,
+    // otherwise an OTLP exporter configured from OTEL_EXPORTER_OTLP_*, which
+    // means setting OTEL_EXPORTER_OTLP_ENDPOINT for metrics also sends every
+    // span to that collector.
     registerOTel({
       serviceName: context.agentName,
       spanProcessors: [
-        new SimpleSpanProcessor(
-          new PostHogTraceExporter({
-            projectToken: env.POSTHOG_PROJECT_TOKEN,
-            host: env.POSTHOG_HOST,
-          }),
-        ),
+        new PostHogSpanProcessor({
+          projectToken: env.POSTHOG_PROJECT_TOKEN,
+          host: env.POSTHOG_HOST,
+        }),
+        "auto",
       ],
     });
   },

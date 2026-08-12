@@ -7,7 +7,10 @@ import {
 import { OpenTelemetryTransportV3 } from "@opentelemetry/winston-transport";
 import winston from "winston";
 import type TransportStream from "winston-transport";
+import { ensureOtelDiagnostics } from "./diagnostics";
 import { parseEnv } from "./env";
+import { telemetryResource } from "./resource";
+import { flushOnExit } from "./shutdown";
 
 export interface ConfigureLoggerOptions {
   level?: string;
@@ -26,7 +29,9 @@ export function configureDefaultLogger(
   options: ConfigureLoggerOptions = {},
 ): void {
   winston.configure({
-    level: options.level ?? process.env.LOG_LEVEL ?? "info",
+    // LOG_LEVEL is read through parseEnv by ensureLogger, not from
+    // process.env here: an unrecognized level silently drops every record.
+    level: options.level ?? "info",
     format: structuredFormat,
     transports: [
       new winston.transports.Console(),
@@ -59,8 +64,13 @@ export function ensureLogger(): void {
   if (defaultTransports().length > 0) return;
 
   const env = parseEnv();
+  ensureOtelDiagnostics();
   const provider = new LoggerProvider({
+    resource: telemetryResource(env.OTEL_SERVICE_NAME),
     processors: [
+      // Batched at the SDK default of one second, which is also the window
+      // of records a frozen or hard-killed process loses — flushOnExit
+      // covers an orderly exit, nothing covers those two.
       new BatchLogRecordProcessor({
         exporter: new OTLPLogExporter({
           url: `${env.POSTHOG_HOST}/i/v1/logs`,
@@ -70,7 +80,9 @@ export function ensureLogger(): void {
     ],
   });
   logs.setGlobalLoggerProvider(provider);
+  flushOnExit(provider);
   configureDefaultLogger({
+    level: env.LOG_LEVEL,
     extraTransports: [new OpenTelemetryTransportV3()],
   });
 }

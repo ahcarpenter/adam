@@ -11,6 +11,8 @@ describe("parseEnv", () => {
     expect(parseEnv({ ...validEnv, UNRELATED_VAR: "ignored" })).toEqual({
       ...validEnv,
       POSTHOG_HOST: "https://us.i.posthog.com",
+      LOG_LEVEL: "info",
+      OTEL_SERVICE_NAME: "adam",
     });
   });
 
@@ -49,5 +51,37 @@ describe("parseEnv", () => {
     expect(() =>
       parseEnv({ ...validEnv, UPSTASH_REDIS_REST_TOKEN: "" }),
     ).toThrow(/UPSTASH_REDIS_REST_TOKEN/);
+  });
+
+  it("keeps a winston log level", () => {
+    expect(parseEnv({ ...validEnv, LOG_LEVEL: "debug" }).LOG_LEVEL).toBe(
+      "debug",
+    );
+  });
+
+  it.each(["warning", "INFO", "trace"])(
+    "rejects %s, which winston would silently drop every record for",
+    (level) => {
+      expect(() => parseEnv({ ...validEnv, LOG_LEVEL: level })).toThrow(
+        /LOG_LEVEL/,
+      );
+    },
+  );
+
+  it("keeps an explicit service name", () => {
+    expect(
+      parseEnv({ ...validEnv, OTEL_SERVICE_NAME: "adam-worker" })
+        .OTEL_SERVICE_NAME,
+    ).toBe("adam-worker");
+  });
+
+  it("leaves the metrics endpoint unset by default", () => {
+    expect(parseEnv(validEnv).OTEL_EXPORTER_OTLP_ENDPOINT).toBeUndefined();
+  });
+
+  it("rejects a malformed metrics endpoint", () => {
+    expect(() =>
+      parseEnv({ ...validEnv, OTEL_EXPORTER_OTLP_ENDPOINT: "collector" }),
+    ).toThrow(/OTEL_EXPORTER_OTLP_ENDPOINT/);
   });
 });
