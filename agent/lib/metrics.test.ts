@@ -135,14 +135,14 @@ describe("metrics", () => {
       recordTurn("completed", "channel:eve", 12.5);
 
       expect(counter("agent.turns").add).toHaveBeenCalledWith(1, {
-        outcome: "completed",
-        channel_kind: "channel:eve",
+        "agent.turn.outcome": "completed",
+        "agent.channel.kind": "channel:eve",
       });
       expect(
         histograms.get("agent.turn.duration")?.record,
       ).toHaveBeenCalledWith(12.5, {
-        outcome: "completed",
-        channel_kind: "channel:eve",
+        "agent.turn.outcome": "completed",
+        "agent.channel.kind": "channel:eve",
       });
     });
 
@@ -170,8 +170,8 @@ describe("metrics", () => {
     recordToolCall("agentkit__recall_memory", "failed");
 
     expect(counter("agent.tool_calls").add).toHaveBeenCalledWith(1, {
-      tool: "agentkit__recall_memory",
-      status: "failed",
+      "agent.tool.name": "agentkit__recall_memory",
+      "agent.tool.status": "failed",
     });
   });
 

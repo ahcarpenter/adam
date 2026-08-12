@@ -39,16 +39,16 @@ pnpm knip           # dead code / unused dependency scan
 
 Copy `env.example` to `.env.local` and fill in:
 
-| Variable                                              | Purpose                                                      |
-| ----------------------------------------------------- | ------------------------------------------------------------ |
-| `OPENAI_API_KEY` / `OPENAI_MODEL`                     | Agent model (`@ai-sdk/openai` in `agent/agent.ts`)           |
-| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Memory, RAG, chat history, rate limiting, tool cache         |
-| `BRAINTRUST_API_KEY`                                  | AI trace export                                              |
-| `POSTHOG_HOST`                                        | PostHog region host (defaults to `https://us.i.posthog.com`) |
-| `POSTHOG_PROJECT_TOKEN`                               | Log export                                                   |
-| `LOG_LEVEL`                                           | winston level, closed set (defaults to `info`)               |
-| `OTEL_SERVICE_NAME`                                   | `service.name` on logs and metrics (defaults to `adam`)      |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`                         | OTLP collector: metrics, and all spans via `"auto"`          |
+| Variable                                              | Purpose                                                         |
+| ----------------------------------------------------- | --------------------------------------------------------------- |
+| `OPENAI_API_KEY` / `OPENAI_MODEL`                     | Agent model (`@ai-sdk/openai` in `agent/agent.ts`)              |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Memory, RAG, chat history, rate limiting, tool cache            |
+| `BRAINTRUST_API_KEY`                                  | AI trace export                                                 |
+| `POSTHOG_HOST`                                        | PostHog region host (defaults to `https://us.i.posthog.com`)    |
+| `POSTHOG_PROJECT_TOKEN`                               | Log export                                                      |
+| `LOG_LEVEL`                                           | winston level, closed set (defaults to `info`)                  |
+| `OTEL_SERVICE_NAME`                                   | `service.name` on logs and metrics (defaults to the agent name) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`                         | OTLP collector: metrics, and all spans via `"auto"`             |
 
 Startup fails fast on an invalid environment in every mode, local dev
 included. `POSTHOG_HOST`, `LOG_LEVEL`, and `OTEL_SERVICE_NAME` default;
@@ -64,13 +64,14 @@ silent logging outage rather than an error.
 Every signal below exists to answer one of these. A signal that answers none
 of them should not be added.
 
-1. **Are turns failing, and why?** — `agent.turns{outcome}` for the rate
-   (`completed` / `failed` / `cancelled`), the `turn_failed` log line for the
-   `code`, message, and `details` behind it.
+1. **Are turns failing, and why?** — `agent.turns{agent.turn.outcome}` for the
+   rate (`completed` / `failed` / `cancelled`), the `turn_failed` log line for
+   the `code`, message, and `details` behind it.
 2. **How slow is a turn?** — `agent.turn.duration`, read at p95/p99. Never
    as an average.
-3. **Are tool calls failing?** — `agent.tool_calls{tool,status}`, plus the
-   `tool_call_failed` log line.
+3. **Are tool calls failing?** — `agent.tool_calls`, keyed by
+   `agent.tool.name` and `agent.tool.status`, plus the `tool_call_failed`
+   log line.
 4. **Are callers being throttled?** — `agent.rate_limit.rejections` and the
    `rate_limit_rejected` log. This happens in the auth walk before a session
    exists, so no trace records it.
@@ -99,9 +100,10 @@ so no single startup call reaches them all).
 - **Metrics** — `ensureMetrics()` registers a meter provider only when
   `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Neither PostHog nor Braintrust
   ingests OTLP metrics, so there is no default destination and the
-  instruments are no-ops until you point them at a collector. Attributes are
-  closed sets (outcome, channel kind, tool name); ids and addresses stay in
-  logs and traces where cardinality is free.
+  instruments are no-ops until you point them at a collector. Attribute keys
+  are dotted and namespaced under `agent.` (not `eve.`, which the runtime
+  reserves), and every one is a closed set — outcome, channel kind, tool
+  name; ids and addresses stay in logs and traces where cardinality is free.
 - **Traces** — the official Braintrust eve integration
   (`braintrustEveInstrumentation` + `agent/hooks/braintrust.ts`) captures
   turns, steps, tool calls, and subagent interactions natively in Braintrust;
@@ -134,11 +136,11 @@ project token — use a different one per Vercel environment.
 None are defined in code; PostHog and Braintrust own them. Create these
 three, and nothing that pages on a cause (CPU, memory, a pod restart):
 
-| Alert            | Condition                                              | Severity | First move                                                                                    |
-| ---------------- | ------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------- |
-| Turns failing    | `agent.turns{outcome=failed}` > 1% over 5 min          | page     | Group `turn_failed` logs by `code`; open one failing session's Braintrust trace.              |
-| Turns slow       | `agent.turn.duration` p99 > 60s over 10 min            | page     | Compare model-call span duration against tool spans in a slow trace.                          |
-| Tool degradation | `agent.tool_calls{status!=completed}` > 5% over 15 min | ticket   | Group `tool_call_failed` by `tool` and `code`; check Upstash Redis health for AgentKit tools. |
+| Alert            | Condition                                                         | Severity | First move                                                                                    |
+| ---------------- | ----------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------- |
+| Turns failing    | `agent.turns{agent.turn.outcome=failed}` > 1% over 5 min          | page     | Group `turn_failed` logs by `code`; open one failing session's Braintrust trace.              |
+| Turns slow       | `agent.turn.duration` p99 > 60s over 10 min                       | page     | Compare model-call span duration against tool spans in a slow trace.                          |
+| Tool degradation | `agent.tool_calls{agent.tool.status!=completed}` > 5% over 15 min | ticket   | Group `tool_call_failed` by `tool` and `code`; check Upstash Redis health for AgentKit tools. |
 
 Thresholds are starting points — replace them with numbers from your own
 traffic once there is a week of it.
@@ -159,7 +161,9 @@ by ordinary traffic on failure. After changing any of it:
 
 An export that fails (bad token, wrong region host) surfaces on stderr via
 the OTel diagnostic logger rather than disappearing — check there first when
-a signal is missing.
+a signal is missing. A `service_name_drift` warning at startup means logs and
+metrics are landing under a different service than traces, which happens if
+the package is renamed without updating `OTEL_SERVICE_NAME`.
 
 ## Upstash capabilities
 

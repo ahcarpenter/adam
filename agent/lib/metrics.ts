@@ -64,16 +64,23 @@ export type TurnOutcome = "completed" | "failed" | "cancelled";
 
 /**
  * RED for turns: rate and errors from the counter, duration from the
- * histogram. Attributes stay closed sets — outcome is two values and
+ * histogram. Attributes stay closed sets — outcome is three values and
  * channel kind is eve's own enumeration — so the series count is bounded.
  * Session, turn, and user ids belong in logs and traces, never here.
+ *
+ * Keys are dotted and namespaced under `agent.`, matching the instrument
+ * names. Not `eve.`, which the runtime reserves for the attributes it sets
+ * itself.
  */
 export function recordTurn(
   outcome: TurnOutcome,
   channelKind: string,
   durationSeconds?: number,
 ): void {
-  const attributes = { outcome, channel_kind: channelKind };
+  const attributes = {
+    "agent.turn.outcome": outcome,
+    "agent.channel.kind": channelKind,
+  };
   turnCounter ??= meter().createCounter("agent.turns", {
     description: "Turns by terminal outcome.",
   });
@@ -93,7 +100,10 @@ export function recordToolCall(tool: string, status: string): void {
   toolCallCounter ??= meter().createCounter("agent.tool_calls", {
     description: "Tool calls by tool and result status.",
   });
-  toolCallCounter.add(1, { tool, status });
+  toolCallCounter.add(1, {
+    "agent.tool.name": tool,
+    "agent.tool.status": status,
+  });
 }
 
 /**

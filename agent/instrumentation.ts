@@ -7,6 +7,7 @@ import { parseEnv } from "./lib/env";
 import { braintrustProject } from "./lib/environment";
 import { ensureLogger } from "./lib/logger";
 import { ensureMetrics } from "./lib/metrics";
+import { reportServiceNameDrift } from "./lib/resource";
 import {
   attributeStep,
   type EarlierStepStartedResult,
@@ -61,6 +62,10 @@ export default defineInstrumentation({
     // Fail fast on an incomplete environment — in every mode, local dev
     // included (no degraded console-only fallback).
     const env = parseEnv();
+
+    // The one place both names exist: workers name logs and metrics from the
+    // environment, only this callback learns what eve resolved.
+    reportServiceNameDrift(env.OTEL_SERVICE_NAME, context.agentName);
 
     braintrust.setup?.(context);
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AGENT_NAME } from "./agent-name";
 
 /**
  * winston's default (npm) levels. The set is closed here because winston
@@ -28,12 +29,13 @@ const envSchema = z.object({
   POSTHOG_PROJECT_TOKEN: z.string().min(1),
   LOG_LEVEL: z.enum(logLevels).default("info"),
   /**
-   * `service.name` on exported logs and metrics. Keep it equal to the eve
-   * agent name (this package's `name`), which is what traces are tagged
-   * with; `@vercel/otel` reads the same variable for the trace pipeline, so
-   * setting it moves all three signals together.
+   * `service.name` on exported logs and metrics. Defaults to the agent name,
+   * which is what traces are tagged with; `instrumentation.ts` reports a
+   * mismatch against the name eve actually resolved. `@vercel/otel` reads
+   * the same variable for the trace pipeline, so overriding it moves all
+   * three signals together.
    */
-  OTEL_SERVICE_NAME: z.string().min(1).default("adam"),
+  OTEL_SERVICE_NAME: z.string().min(1).default(AGENT_NAME),
   /**
    * Metrics destination. Neither PostHog nor Braintrust ingests OTLP
    * metrics, so the metric pipeline stays off until this points at a
