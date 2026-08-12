@@ -24,10 +24,11 @@ task history live in [`specs/`](specs/enterprise-boilerplate.md).
 pnpm dev            # eve dev (TUI at http://127.0.0.1:2000)
 pnpm build          # eve build
 pnpm typecheck      # tsc
-pnpm lint           # biome check .
-pnpm lint:fix       # biome check --write .
-pnpm format         # biome format --write + prettier --write (md/yml/css)
-pnpm format:check   # biome ci + prettier --check (CI mode)
+pnpm lint           # biome lint --write . (auto-fix)
+pnpm lint:check     # biome lint . (no writes)
+pnpm lint:ci        # biome ci . (lint + format, CI mode)
+pnpm format         # biome check --write + prettier --write (md/yml/css)
+pnpm format:check   # biome check + prettier --check
 pnpm test           # vitest run
 pnpm test:coverage  # vitest run --coverage (95% thresholds)
 pnpm knip           # dead code / unused dependency scan

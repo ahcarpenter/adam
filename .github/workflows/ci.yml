@@ -21,8 +21,11 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Lint and format check
-        run: pnpm format:check
+      - name: Lint (biome ci)
+        run: pnpm lint:ci
+
+      - name: Format check (prettier)
+        run: pnpm exec prettier --check "**/*.{md,yml,yaml,css}"
 
       - name: Typecheck
         run: pnpm typecheck
