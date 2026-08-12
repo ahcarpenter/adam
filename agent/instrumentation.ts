@@ -25,6 +25,10 @@ const braintrust = braintrustEveInstrumentation({
 export default defineInstrumentation({
   // Preserves recordInputs/recordOutputs and any future wrapper fields.
   ...braintrust,
+  // Wraps each inbound channel HTTP request in a low-cardinality SERVER span
+  // (route template + method only — no session ids, tokens, or bodies) that
+  // parents the turn trace, giving PostHog request-level visibility.
+  traceChannelRequests: true,
   setup: (context) => {
     // Logs: JSON console + OTel bridge to PostHog Logs, configured per
     // process by ensureLogger() (the eve runtime runs authored modules in
