@@ -6,6 +6,7 @@ export default defineConfig({
     passWithNoTests: true,
     coverage: {
       provider: "v8",
+      reporter: ["text", "html", "lcov"],
       include: ["agent/**/*.ts"],
       exclude: [
         "**/*.test.ts",
