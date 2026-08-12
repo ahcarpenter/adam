@@ -1,0 +1,18 @@
+# Gate: fail the check when project coverage drops below 95% (spec decision 2026-08-12).
+coverage:
+  status:
+    project:
+      default:
+        target: 95%
+    patch:
+      default:
+        target: 95%
+
+# Wiring-only files executed by the eve runtime at startup, not unit-testable.
+# Must mirror the coverage.exclude list in vitest.config.ts.
+ignore:
+  - "agent/agent.ts"
+  - "agent/instrumentation.ts"
+  - "agent/channels/**"
+  - "agent/extensions/**"
+  - "**/*.test.ts"
