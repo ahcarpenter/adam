@@ -57,10 +57,12 @@ at startup); production fails fast on an invalid environment.
   logger (JSON console + OTel bridge to PostHog Logs). Any authored file logs
   through `import winston from "winston"`; records emitted inside a span
   carry trace/span ids.
-- **Traces** — two span processors: `BraintrustExporter({ filterAISpans:
-true })` sends only AI spans to Braintrust; `PostHogTraceExporter` sends
-  agent traces/generations to PostHog LLM analytics, linked to the
-  authenticated user via `posthog.distinct_id`.
+- **Traces** — the official Braintrust eve integration
+  (`braintrustEveInstrumentation` + `agent/hooks/braintrust.ts`) captures
+  turns, steps, tool calls, and subagent interactions natively in Braintrust;
+  a `PostHogTraceExporter` span processor sends agent traces/generations to
+  PostHog LLM analytics, linked to the authenticated user via
+  `posthog.distinct_id`.
 
 ## Upstash capabilities
 
