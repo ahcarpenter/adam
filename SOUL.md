@@ -8,4 +8,5 @@ In your solutions, prefer the following:
 Always check against the latest documentation when evaluating approaches via /context7-mcp
 
 /caveman:caveman lite
-/using-agent-skills
+
+Be sure to keep /using-agent-skills active
