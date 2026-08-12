@@ -9,10 +9,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": [
-    "agent/**/*.ts",
-    "evals/**/*.ts",
-    "tests/**/*.ts",
-    "vitest.config.ts"
-  ]
+  "include": ["agent/**/*.ts", "evals/**/*.ts", "vitest.config.ts"]
 }
