@@ -1,18 +1,6 @@
-import { diag } from "@opentelemetry/api";
 import type { HookContext, HookEvent } from "eve/hooks";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import TransportStream from "winston-transport";
-import { configureDefaultLogger } from "./logger";
-import { recordToolCall, recordTurn } from "./metrics";
-import {
-  onActionResult,
-  onSessionFailed,
-  onStepFailed,
-  onTurnCancelled,
-  onTurnCompleted,
-  onTurnFailed,
-  onTurnStarted,
-} from "./observability";
 
 vi.mock("./metrics", () => ({
   recordToolCall: vi.fn(),
@@ -28,12 +16,36 @@ class MemoryTransport extends TransportStream {
   }
 }
 
-let logged: MemoryTransport;
+/**
+ * Fresh module instance per test. The handlers track in-flight turns in
+ * module state, so without this the eviction case would leave a thousand
+ * entries behind and every later case would depend on test order.
+ */
+async function load() {
+  vi.resetModules();
+  // resetModules gives a fresh observability module, but vitest keeps the
+  // mocked one, so its call history has to be cleared separately.
+  vi.clearAllMocks();
+  const observability = await import("./observability");
+  const metrics = await import("./metrics");
+  const { diag } = await import("@opentelemetry/api");
+  const { configureDefaultLogger } = await import("./logger");
 
-function lastRecord(): Record<string, unknown> {
-  const record = logged.records.at(-1);
-  if (!record) throw new Error("no log records captured");
-  return record;
+  const logged = new MemoryTransport();
+  configureDefaultLogger({ extraTransports: [logged] });
+
+  return {
+    ...observability,
+    diag,
+    logged,
+    lastRecord() {
+      const record = logged.records.at(-1);
+      if (!record) throw new Error("no log records captured");
+      return record;
+    },
+    recordToolCall: vi.mocked(metrics.recordToolCall),
+    recordTurn: vi.mocked(metrics.recordTurn),
+  };
 }
 
 // The handlers read only session.id and channel.kind off the hook context.
@@ -68,19 +80,10 @@ const turnCompleted = (at: string) =>
   );
 
 describe("observability handlers", () => {
-  beforeEach(() => {
-    vi.mocked(recordTurn).mockClear();
-    vi.mocked(recordToolCall).mockClear();
-    logged = new MemoryTransport();
-    configureDefaultLogger({ extraTransports: [logged] });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   describe("turn duration", () => {
-    it("measures a completed turn from the durable envelope", () => {
+    it("measures a completed turn from the durable envelope", async () => {
+      const { onTurnStarted, onTurnCompleted, recordTurn, logged } =
+        await load();
       const ctx = context("sess_1", "channel:eve");
       onTurnStarted(turnStarted("2026-08-12T10:00:00.000Z"), ctx);
       onTurnCompleted(turnCompleted("2026-08-12T10:00:03.500Z"), ctx);
@@ -89,7 +92,8 @@ describe("observability handlers", () => {
       expect(logged.records).toHaveLength(0);
     });
 
-    it("still counts a turn whose start this process never saw", () => {
+    it("still counts a turn whose start this process never saw", async () => {
+      const { onTurnCompleted, recordTurn } = await load();
       onTurnCompleted(turnCompleted("2026-08-12T10:00:03.500Z"), context());
 
       expect(recordTurn).toHaveBeenCalledWith(
@@ -99,7 +103,8 @@ describe("observability handlers", () => {
       );
     });
 
-    it("does not reuse a start across turns", () => {
+    it("does not reuse a start across turns", async () => {
+      const { onTurnStarted, onTurnCompleted, recordTurn } = await load();
       const ctx = context();
       onTurnStarted(turnStarted("2026-08-12T10:00:00.000Z"), ctx);
       onTurnCompleted(turnCompleted("2026-08-12T10:00:01.000Z"), ctx);
@@ -114,7 +119,8 @@ describe("observability handlers", () => {
       );
     });
 
-    it("keys starts per session, not per turn id", () => {
+    it("keys starts per session, not per turn id", async () => {
+      const { onTurnStarted, onTurnCompleted, recordTurn } = await load();
       onTurnStarted(turnStarted("2026-08-12T10:00:00.000Z"), context("sess_a"));
       onTurnCompleted(
         turnCompleted("2026-08-12T10:00:05.000Z"),
@@ -128,7 +134,8 @@ describe("observability handlers", () => {
       );
     });
 
-    it("ignores an unparseable start timestamp", () => {
+    it("ignores an unparseable start timestamp", async () => {
+      const { onTurnStarted, onTurnCompleted, recordTurn } = await load();
       const ctx = context();
       onTurnStarted(turnStarted("not-a-timestamp"), ctx);
       onTurnCompleted(turnCompleted("2026-08-12T10:00:01.000Z"), ctx);
@@ -140,7 +147,8 @@ describe("observability handlers", () => {
       );
     });
 
-    it("ignores an unparseable end timestamp", () => {
+    it("ignores an unparseable end timestamp", async () => {
+      const { onTurnStarted, onTurnCompleted, recordTurn } = await load();
       const ctx = context();
       onTurnStarted(turnStarted("2026-08-12T10:00:00.000Z"), ctx);
       onTurnCompleted(turnCompleted("not-a-timestamp"), ctx);
@@ -152,7 +160,9 @@ describe("observability handlers", () => {
       );
     });
 
-    it("counts a cancelled turn and releases its start", () => {
+    it("counts a cancelled turn and releases its start", async () => {
+      const { onTurnStarted, onTurnCancelled, onTurnCompleted, recordTurn } =
+        await load();
       const ctx = context("sess_1", "channel:eve");
       onTurnStarted(turnStarted("2026-08-12T10:00:00.000Z"), ctx);
       onTurnCancelled(
@@ -174,7 +184,8 @@ describe("observability handlers", () => {
       );
     });
 
-    it("evicts the oldest start once the tracking cap is reached", () => {
+    it("evicts the oldest start once the tracking cap is reached", async () => {
+      const { onTurnStarted, onTurnCompleted, recordTurn } = await load();
       const first = context("sess_first");
       onTurnStarted(turnStarted("2026-08-12T10:00:00.000Z"), first);
       for (let i = 0; i < 1_000; i += 1) {
@@ -193,7 +204,8 @@ describe("observability handlers", () => {
     });
   });
 
-  it("logs and counts a failed turn", () => {
+  it("logs and counts a failed turn", async () => {
+    const { onTurnFailed, recordTurn, lastRecord } = await load();
     onTurnFailed(
       event<HookEvent<"turn.failed">>("turn.failed", {
         code: "model_error",
@@ -219,7 +231,8 @@ describe("observability handlers", () => {
     });
   });
 
-  it("warns on a step failure without counting a turn", () => {
+  it("warns on a step failure without counting a turn", async () => {
+    const { onStepFailed, recordTurn, lastRecord } = await load();
     onStepFailed(
       event<HookEvent<"step.failed">>("step.failed", {
         code: "timeout",
@@ -246,7 +259,8 @@ describe("observability handlers", () => {
     });
   });
 
-  it("logs a failed session", () => {
+  it("logs a failed session", async () => {
+    const { onSessionFailed, lastRecord } = await load();
     onSessionFailed(
       event<HookEvent<"session.failed">>("session.failed", {
         code: "unrecoverable",
@@ -269,11 +283,14 @@ describe("observability handlers", () => {
     });
   });
 
-  it("contains a telemetry failure instead of failing the turn", () => {
+  it("contains a telemetry failure instead of failing the turn", async () => {
     // eve turns a thrown handler into turn.failed, and one on the failure
     // cascade into session.failed.
-    vi.spyOn(diag, "error").mockImplementation(() => undefined);
-    vi.mocked(recordTurn).mockImplementationOnce(() => {
+    const { onTurnFailed, recordTurn, diag } = await load();
+    const diagError = vi
+      .spyOn(diag, "error")
+      .mockImplementation(() => undefined);
+    recordTurn.mockImplementationOnce(() => {
       throw new Error("meter provider shut down");
     });
 
@@ -288,6 +305,8 @@ describe("observability handlers", () => {
         context(),
       ),
     ).not.toThrow();
+    expect(diagError).toHaveBeenCalledOnce();
+    diagError.mockRestore();
   });
 
   describe("tool calls", () => {
@@ -309,7 +328,8 @@ describe("observability handlers", () => {
         turnId: "turn_0",
       });
 
-    it("counts a successful call without logging", () => {
+    it("counts a successful call without logging", async () => {
+      const { onActionResult, recordToolCall, logged } = await load();
       onActionResult(toolResult("completed"), context());
 
       expect(recordToolCall).toHaveBeenCalledWith(
@@ -319,7 +339,8 @@ describe("observability handlers", () => {
       expect(logged.records).toHaveLength(0);
     });
 
-    it("counts and logs a failed call", () => {
+    it("counts and logs a failed call", async () => {
+      const { onActionResult, recordToolCall, lastRecord } = await load();
       onActionResult(
         toolResult("failed", { code: "redis_error", message: "no connection" }),
         context(),
@@ -342,7 +363,8 @@ describe("observability handlers", () => {
       });
     });
 
-    it("ignores results that are not tool calls", () => {
+    it("ignores results that are not tool calls", async () => {
+      const { onActionResult, recordToolCall, logged } = await load();
       onActionResult(
         event<HookEvent<"action.result">>("action.result", {
           result: {
