@@ -8,6 +8,11 @@
     {
       "groupName": "opentelemetry",
       "matchPackageNames": ["/^@opentelemetry\\//"]
+    },
+    {
+      "description": "eve 0.33 dropped hook contracts 1-9 (model identity moved from session.started to step.started call attribution) and supports only 10. @upstash/agentkit-eve-extension@0.4.0 is the latest release and still declares hook: 1, so 0.33 fails `eve build`. Drop this rule once Upstash publishes an extension built against hook contract 10.",
+      "matchPackageNames": ["eve"],
+      "allowedVersions": "<0.33.0"
     }
   ]
 }
