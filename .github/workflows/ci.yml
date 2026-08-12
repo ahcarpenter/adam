@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (biome ci)
+        run: pnpm lint:ci
+
+      - name: Format check (prettier)
+        run: pnpm exec prettier --check "**/*.{md,yml,yaml,css}"
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Dead code
+        run: pnpm knip
+
+      - name: Tests with coverage
+        run: pnpm test:coverage
+
+      # The 95% project/patch gate in codecov.yml activates once the
+      # CODECOV_TOKEN repository secret is set; until then the upload fails
+      # softly and no coverage status check is reported.
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/lcov.info

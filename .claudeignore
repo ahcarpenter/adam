@@ -7,6 +7,4 @@ node_modules
 .nitro
 dist
 .DS_Store
-.claude
-SOUL.md
-coverage
+.claude/settings.local.json
