@@ -9,8 +9,8 @@ Success looks like: clone → `pnpm install` → set env vars → `eve dev` runs
 ## Assumptions
 
 1. GitHub is the CI/CD host (remote is `github.com:ahcarpenter/adam`) → GitHub Actions for CI, Codecov via `codecov/codecov-action`, Renovate via the GitHub App with a repo config file.
-2. PostHog Cloud (US) is the log destination; project token available as an env var. PostHog is used **only** as a log sink in this boilerplate — no product-analytics event capture wiring.
-3. Braintrust receives **only** AI spans (`filterAISpans: true`); no non-AI spans, no logs.
+2. PostHog Cloud (US) receives logs and agent traces (LLM analytics); project token available as an env var. No product-analytics event capture wiring.
+3. Braintrust receives **only** AI spans (via the official `braintrustEveInstrumentation` integration); no non-AI spans, no logs.
 4. Deployment target is Vercel (`.vercel/` present); env vars managed with `vercel env`.
 5. Package manager is pnpm (lockfile present); Node 24 per `engines`.
 6. Unit tests are colocated (`*.test.ts` next to source); eve evals live in `evals/` (already aliased as `#evals/*`).
@@ -20,25 +20,25 @@ Success looks like: clone → `pnpm install` → set env vars → `eve dev` runs
 
 ## Tech Stack
 
-| Concern                    | Tool                                                             | Notes                                                                                                              |
-| -------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Framework                  | eve ^0.31.3, `ai` v7, TypeScript 7, Node 24, pnpm                | existing                                                                                                           |
-| Lint + format (TS/JS/JSON) | Biome                                                            | linter **and** formatter for code                                                                                  |
-| Format (everything else)   | Prettier                                                         | Markdown, YAML, CSS only — scoped so the two never fight                                                           |
-| Unit tests + coverage      | Vitest (`@vitest/coverage-v8`)                                   | colocated `*.test.ts`                                                                                              |
-| Coverage reporting         | Codecov                                                          | uploaded from CI, `codecov.yml` thresholds                                                                         |
-| Dead code / unused deps    | Knip                                                             | runs in CI                                                                                                         |
-| Dependency automation      | Renovate                                                         | `renovate.json`, GitHub App                                                                                        |
-| Schemas / validation       | Zod 4                                                            | existing; also validates env vars at startup                                                                       |
-| Structured logging         | winston                                                          | JSON console transport + OTel bridge                                                                               |
-| Log pipeline               | OTel Logs SDK → OTLP/HTTP → PostHog                              | endpoint `<POSTHOG_HOST>/i/v1/logs?token=<token>`; trace/span ids auto-correlated when emitted inside span context |
-| Tracing                    | `@vercel/otel` via eve `agent/instrumentation.ts`                | `defineInstrumentation` + `registerOTel`                                                                           |
-| AI trace destination       | `@braintrust/otel` `BraintrustExporter`                          | `parent: project_name:adam`, `filterAISpans: true`                                                                 |
-| Memory + RAG tools         | `@upstash/agentkit-eve`                                          | standalone tool files (see structure)                                                                              |
-| Chat history               | `extension/upstash-agentkit` (`@upstash/agentkit-eve-extension`) | `chatHistory: true`; memory tools disabled in extension (owned by standalone files)                                |
-| Rate limiting              | `createRateLimitAuth` from `@upstash/agentkit-eve`               | in channel auth pipeline, sliding window                                                                           |
-| Tool caching               | `defineCachedTool` from `@upstash/agentkit-eve`                  | one thin stub tool demonstrating the pattern                                                                       |
-| Git hooks                  | husky (existing) + lint-staged                                   | pre-commit: biome + prettier on staged files                                                                       |
+| Concern                     | Tool                                               | Notes                                                                                                                |
+| --------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Framework                   | eve ^0.31.3, `ai` v7, TypeScript 7, Node 24, pnpm  | existing                                                                                                             |
+| Lint + format (TS/JS/JSON)  | Biome                                              | linter **and** formatter for code                                                                                    |
+| Format (everything else)    | Prettier                                           | Markdown, YAML, CSS only — scoped so the two never fight                                                             |
+| Unit tests + coverage       | Vitest (`@vitest/coverage-v8`)                     | colocated `*.test.ts`                                                                                                |
+| Coverage reporting          | Codecov                                            | uploaded from CI, `codecov.yml` thresholds                                                                           |
+| Dead code / unused deps     | Knip                                               | runs in CI                                                                                                           |
+| Dependency automation       | Renovate                                           | `renovate.json`, GitHub App                                                                                          |
+| Schemas / validation        | Zod 4                                              | existing; also validates env vars at startup                                                                         |
+| Structured logging          | winston                                            | JSON console transport + OTel bridge                                                                                 |
+| Log pipeline                | OTel Logs SDK → OTLP/HTTP → PostHog                | endpoint `<POSTHOG_HOST>/i/v1/logs`, `Authorization: Bearer <token>`; trace/span ids auto-correlated in span context |
+| Tracing                     | `@vercel/otel` via eve `agent/instrumentation.ts`  | `defineInstrumentation` + `registerOTel`                                                                             |
+| AI trace destination        | `braintrustEveInstrumentation` from `braintrust`   | native turn/step/tool capture; plus `agent/hooks/braintrust.ts` (`braintrustEveHook`)                                |
+| LLM analytics traces        | `PostHogTraceExporter` from `@posthog/ai`          | span processor in `instrumentation.ts`; `posthog.distinct_id` user linking                                           |
+| Memory + RAG + chat history | `@upstash/agentkit-eve-extension`                  | `agent/extensions/agentkit.ts` — `agentkit({ memory, search, chatHistory })`, single wiring point                    |
+| Rate limiting               | `createRateLimitAuth` from `@upstash/agentkit-eve` | in channel auth pipeline, sliding window                                                                             |
+| Tool caching                | `defineCachedTool` from `@upstash/agentkit-eve`    | documented pattern for future expensive tools; no shipped stub                                                       |
+| Git hooks                   | husky (existing) + lint-staged                     | pre-commit: biome + prettier on staged files                                                                         |
 
 ## Commands
 
@@ -62,13 +62,17 @@ Dead code:  pnpm knip                # knip
 agent/
   agent.ts                     # agent config (existing)
   instructions.md              # system prompt (existing)
-  instrumentation.ts           # OTel: Braintrust traces + PostHog logs + winston setup
-  channels/                    # channel(s) with createRateLimitAuth in auth pipeline
+  instrumentation.ts           # Braintrust base + PostHog trace exporter + logger bootstrap
+  channels/
+    eve.ts                     # eve channel with createRateLimitAuth ahead of authenticators
   extensions/
     agentkit.ts                # agentkit({ memory, search, chatHistory }) — single wiring point
-lib/
-  env.ts                       # zod-validated env vars
-  logger.ts                    # winston config helper (used from instrumentation.ts)
+  hooks/
+    braintrust.ts              # braintrustEveHook (subagent/tool capture)
+  lib/                         # shared authored code (eve's import-only slot)
+    env.ts                     # zod-validated env vars
+    logger.ts                  # winston config + self-configuring ensureLogger()
+    step-attribution.ts        # posthog.distinct_id user attribution for steps
 evals/                         # eve evals (existing alias)
 specs/                         # this spec
 .github/workflows/ci.yml      # lint, format check, typecheck, knip, test+coverage, codecov upload
@@ -78,55 +82,61 @@ vitest.config.ts
 knip.json
 renovate.json
 codecov.yml
-.lintstagedrc + .husky/pre-commit (extend existing)
+.lintstagedrc.json + .husky/pre-commit (extend existing)
 ```
 
-**Hard constraint (eve runtime):** tool/channel/extension files are snapshotted and resolve **package imports only** — they cannot import `lib/` or other `agent/` modules. Consequences:
+**Hard constraint (eve runtime):** tool/channel/extension files are snapshotted and resolve **package imports only** — they cannot import `agent/lib/` or other `agent/` modules. Consequences:
 
 - Per-tool config (e.g. `userId` resolvers) is repeated in each tool file, not shared.
-- Logging from tool files uses winston's default logger (`import winston from "winston"`), configured once at startup in `instrumentation.ts` — same module instance at runtime. Verified during implementation; fallback is `@opentelemetry/api-logs` directly.
+- Logging everywhere goes through winston's default logger (`import winston from "winston"`). The eve runtime executes authored modules in separate workers, so no single startup call can configure them all — each process bootstraps once via the self-configuring `ensureLogger()` in `agent/lib/logger.ts`.
 
 ## Code Style
 
-Biome defaults (recommended ruleset), 2-space indent, double quotes per Biome default. Example of the house style for a tool file:
+Biome defaults (recommended ruleset), 2-space indent, double quotes per Biome default. Example of the house style for a snapshotted (tool/channel/extension) file:
 
 ```ts
-// agent/tools/recall_memory.ts
-import { defineMemoryRecallTool } from "@upstash/agentkit-eve";
+// agent/extensions/agentkit.ts
+import agentkit from "@upstash/agentkit-eve-extension";
+import { s } from "@upstash/redis";
 
-export default defineMemoryRecallTool({
-  userId: (_, ctx) => ctx.session.auth.current?.principalId ?? ctx.session.id,
-  topK: 5,
-  minScore: 1,
+export default agentkit({
+  memory: { topK: 5, minScore: 1 },
+  search: {
+    schema: s.object({ title: s.string(), content: s.string() }),
+    indexName: "documents",
+  },
+  chatHistory: true,
 });
 ```
 
 Conventions:
 
-- Every external input validated with Zod; env access only through `lib/env.ts`.
-- Tool files: default-export a single `define*` call, config inline, no local abstractions.
+- Every external input validated with Zod; env access only through `agent/lib/env.ts`.
+- Snapshotted files: default-export a single `define*`/factory call, config inline, no local abstractions.
 - Logs: structured fields, never string interpolation of payloads (`logger.info("tool executed", { toolName, durationMs })`).
 
 ## Testing Strategy
 
 - **Vitest** for unit tests, colocated `*.test.ts`. Coverage via v8 provider.
-- Skeleton ships tests for: `lib/env.ts` (valid/invalid env), `lib/logger.ts` (shape of structured output), and one tool-config smoke test.
+- Skeleton ships tests for: `agent/lib/env.ts` (valid/invalid env), `agent/lib/logger.ts` (shape of structured output), and `agent/lib/step-attribution.ts` (principal selection and context merging).
 - **eve evals** directory remains the home for model-behavior checks (out of scope to populate here beyond what scaffolding exists).
 - Coverage uploaded to Codecov on every CI run; `codecov.yml` **fails the check when project coverage < 95%**. Wiring-only files that cannot meaningfully execute under unit tests (e.g. `agent/instrumentation.ts`) may be excluded from coverage — any exclusion is listed explicitly in `codecov.yml`/`vitest.config.ts` and justified in a comment.
 - CI order: install → biome ci → prettier check → typecheck → knip → vitest coverage → codecov upload.
 
 ## Observability Design
 
-One `agent/instrumentation.ts` configures everything:
+One `agent/instrumentation.ts` is the single wiring point:
 
 1. `registerOTel` with `serviceName: agentName`.
-2. **Traces:** `BraintrustExporter({ parent, filterAISpans: true })` — AI spans only reach Braintrust.
-3. **Logs:** OTel `LoggerProvider` + `BatchLogRecordProcessor` + `OTLPLogExporter` pointed at `${POSTHOG_HOST}/i/v1/logs?token=${POSTHOG_PROJECT_TOKEN}`.
-4. **winston:** configured at startup with (a) JSON console transport, (b) `@opentelemetry/winston-transport` bridging into the OTel logs pipeline → PostHog. All logs — general and trace-correlated — land in PostHog; trace/span ids ride along automatically when logging inside an active span.
+2. **AI traces:** the official Braintrust eve integration (`braintrustEveInstrumentation` as the instrumentation base, plus `agent/hooks/braintrust.ts`) captures turns, steps, tool calls, and subagent interactions natively in Braintrust.
+3. **LLM analytics:** a `PostHogTraceExporter` span processor sends agent traces/generations to PostHog, linked to the authenticated user via `posthog.distinct_id` (`agent/lib/step-attribution.ts`, merged into the `step.started` handler).
+4. **Logs:** OTel `LoggerProvider` + `BatchLogRecordProcessor` + `OTLPLogExporter` pointed at `${POSTHOG_HOST}/i/v1/logs` with an `Authorization: Bearer ${POSTHOG_PROJECT_TOKEN}` header, bootstrapped per process by `ensureLogger()`.
+5. **winston:** JSON console transport plus `@opentelemetry/winston-transport` bridging into the OTel logs pipeline → PostHog. All logs — general and trace-correlated — land in PostHog; trace/span ids ride along automatically when logging inside an active span.
 
-Env vars (all validated in `lib/env.ts`):
+Env vars (all validated in `agent/lib/env.ts`):
 
 ```
+OPENAI_API_KEY, OPENAI_MODEL
 UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 BRAINTRUST_API_KEY
 POSTHOG_HOST (default https://us.i.posthog.com), POSTHOG_PROJECT_TOKEN
@@ -134,7 +144,7 @@ POSTHOG_HOST (default https://us.i.posthog.com), POSTHOG_PROJECT_TOKEN
 
 ## Boundaries
 
-- **Always:** run `pnpm lint && pnpm typecheck && pnpm test` before committing; validate env through `lib/env.ts`; keep Prettier and Biome file scopes disjoint; structured log fields only.
+- **Always:** run `pnpm lint && pnpm typecheck && pnpm test` before committing; validate env through `agent/lib/env.ts`; keep Prettier and Biome file scopes disjoint; structured log fields only.
 - **Ask first:** adding dependencies beyond this spec; changing channel auth; sending new data categories (inputs/outputs/PII) to PostHog or Braintrust; enabling `recordInputs/recordOutputs` changes; provisioning paid services.
 - **Never:** commit secrets or `.env.local`; hand-edit `node_modules` or `.eve/`; delete or skip failing tests to pass CI; put shared imports inside `agent/tools|channels|extensions` files.
 
@@ -169,3 +179,4 @@ None.
 - 2026-08-12: Drizzle removed from scope. Biome owns TS/JS/JSON lint+format; Prettier scoped to md/yml/css. Standalone tool files own memory+RAG; extension scoped to chat history. Minimal skeleton scope.
 - 2026-08-12: Ex-Open-Question 1 resolved. Transcript capture is extension-only (`hooks/chat_history.mjs`), so the extension stays. Its default memory tools are removed via eve directory mount: `agent/extensions/agentkit/extension.ts` + `disableTool()` overrides in `agent/extensions/agentkit/tools/{recall,save}_memory.ts` (eve docs "Override a contribution"). Extension `search` config omitted, so no search-tool conflict. Standalone `agent/tools/` files own memory+RAG per https://upstash.com/docs/redis/sdks/agentkit/eve#memory-and-rag-as-individual-tool-files.
 - 2026-08-12 (user-directed): no degraded mode — an incomplete environment fails fast in every mode, local dev included. `parseEnv()` throws from `agent.ts` (full-environment validation at the earliest module, replacing the hand-rolled `OPENAI_MODEL` check), `ensureLogger()`, and the `instrumentation.ts` setup; the `NODE_ENV`/`VERCEL_ENV` production gate and both console-only fallbacks are removed.
+- 2026-08-12 (docs): spec body swept to the current state after a ubiquitous-language audit — superseded design removed from the body (`BraintrustExporter`/`filterAISpans`, standalone tool files, repo-root `lib/`, `?token=` log endpoint, shipped cached-tool stub); this log remains the history.
