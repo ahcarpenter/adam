@@ -6,17 +6,17 @@ task history live in [`specs/`](specs/enterprise-boilerplate.md).
 
 ## Stack
 
-| Concern                                               | Tool                                       |
-| ----------------------------------------------------- | ------------------------------------------ |
-| Lint + format (TS/JS/JSON)                            | Biome                                      |
-| Format (md/yml/css)                                   | Prettier                                   |
-| Tests + coverage                                      | Vitest (v8), 95% thresholds                |
-| Coverage gate                                         | Codecov (95% project/patch)                |
-| Dead code / unused deps                               | Knip                                       |
-| Dependency automation                                 | Renovate                                   |
-| Structured logging                                    | winston → OTel logs → PostHog              |
-| Tracing                                               | `@vercel/otel`; AI spans only → Braintrust |
-| Memory / RAG / chat history / rate limit / tool cache | Upstash Redis (AgentKit)                   |
+| Concern                                               | Tool                                           |
+| ----------------------------------------------------- | ---------------------------------------------- |
+| Lint + format (TS/JS/JSON)                            | Biome                                          |
+| Format (md/yml/css)                                   | Prettier                                       |
+| Tests + coverage                                      | Vitest (v8), 95% thresholds                    |
+| Coverage gate                                         | Codecov (95% project/patch)                    |
+| Dead code / unused deps                               | Knip                                           |
+| Dependency automation                                 | Renovate                                       |
+| Structured logging                                    | winston → OTel logs → PostHog                  |
+| Tracing                                               | `@vercel/otel`; AI → Braintrust, all → PostHog |
+| Memory / RAG / chat history / rate limit / tool cache | Upstash Redis (AgentKit)                       |
 
 ## Commands
 
