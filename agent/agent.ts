@@ -6,4 +6,9 @@ if (!model) throw new Error("OPENAI_MODEL is required (see env.example)");
 
 export default defineAgent({
   model: openai(model),
+  build: {
+    // Keep @vercel/otel external: its prebuilt dist contains a direct eval
+    // that trips rolldown's [EVAL] warning when bundled.
+    externalDependencies: ["@vercel/otel"],
+  },
 });
