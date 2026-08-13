@@ -1,0 +1,26 @@
+name: Question
+description: Ask how something in this repository works.
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please keep questions focused on *this* repository. For questions about the
+        eve framework itself, see <https://eve.dev/docs> — and
+        [SUPPORT.md](https://github.com/ahcarpenter/adam/blob/main/SUPPORT.md) for
+        where to ask about the other dependencies.
+  - type: input
+    id: contact
+    attributes:
+      label: Contact details (optional)
+      description: How can we reach you if we need more information?
+      placeholder: ex. email@example.com
+    validations:
+      required: false
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you trying to work out?
+      description: Include what you have already read or tried.
+    validations:
+      required: true

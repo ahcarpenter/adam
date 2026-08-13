@@ -1,0 +1,45 @@
+name: Feature Suggestion
+description: Suggest something this starter should do and does not.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. This repository is a starter template — changes
+        that make the skeleton clearer, safer, or easier to fork are the best fit.
+        Domain-specific features usually belong in a fork.
+  - type: input
+    id: contact
+    attributes:
+      label: Contact details (optional)
+      description: How can we reach you if we need more information?
+      placeholder: ex. email@example.com
+    validations:
+      required: false
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation you hit that made you want this.
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Proposed change
+      description: A clear description of what you want to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered (optional)
+      description: What else did you try or consider, and why was it not enough?
+    validations:
+      required: false
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context (optional)
+    validations:
+      required: false

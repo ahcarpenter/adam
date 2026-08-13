@@ -1,0 +1,9 @@
+# Normalize line endings in the repository regardless of contributor platform.
+* text=auto eol=lf
+
+# Generated: keep it out of diffs and out of the language statistics.
+pnpm-lock.yaml linguist-generated=true -diff
+
+# Documentation, not code — do not let it dominate the language bar.
+docs/** linguist-documentation=true
+specs/** linguist-documentation=true
