@@ -40,11 +40,21 @@ function recordingMeter() {
   };
 }
 
-async function loadMetrics(env: Record<string, string> = validEnv) {
+/**
+ * Values are `string | undefined` so a case can *remove* a variable.
+ * An incomplete environment has to be stated, not assumed from an empty
+ * stub set: `process.env` still holds whatever the shell exported, so a
+ * case that stubs nothing passes only on a machine that happens to have
+ * none of these set.
+ */
+async function loadMetrics(env: Record<string, string | undefined> = validEnv) {
   for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
   vi.resetModules();
   return await import("./metrics");
 }
+
+/** parseEnv requires every key in validEnv, so dropping one is enough. */
+const incompleteEnv = { ...validEnv, BRAINTRUST_API_KEY: undefined };
 
 describe("metrics", () => {
   let meter: ReturnType<typeof recordingMeter>;
@@ -108,12 +118,12 @@ describe("metrics", () => {
     });
 
     it("throws on an incomplete environment", async () => {
-      const { ensureMetrics } = await loadMetrics({});
+      const { ensureMetrics } = await loadMetrics(incompleteEnv);
       expect(() => ensureMetrics()).toThrow(/Invalid environment/);
     });
 
     it("stays retryable after a throw instead of latching off", async () => {
-      const { ensureMetrics } = await loadMetrics({});
+      const { ensureMetrics } = await loadMetrics(incompleteEnv);
       expect(() => ensureMetrics()).toThrow(/Invalid environment/);
 
       for (const [key, value] of Object.entries(validEnv)) {

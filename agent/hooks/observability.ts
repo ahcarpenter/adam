@@ -1,6 +1,6 @@
 import { defineHook } from "eve/hooks";
-import { ensureLogger } from "../lib/logger";
-import { ensureMetrics } from "../lib/metrics";
+import { ensureLogger } from "#lib/logger";
+import { ensureMetrics } from "#lib/metrics";
 import {
   onActionResult,
   onSessionFailed,
@@ -9,7 +9,7 @@ import {
   onTurnCompleted,
   onTurnFailed,
   onTurnStarted,
-} from "../lib/observability";
+} from "#lib/observability";
 
 // This worker emits both signals, so it bootstraps both pipelines.
 ensureLogger();

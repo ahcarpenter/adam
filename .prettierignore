@@ -7,3 +7,7 @@ pnpm-lock.yaml
 coverage
 # Agent-skill scaffolding is vendored as-is, not formatted by repo tooling
 .claude
+# Agent scratch space. Git-ignored, but prettier has no `useIgnoreFile`
+# equivalent to biome.json's, so it has to be listed here or `format:check`
+# fails on a working copy that has one and passes in CI, which never does.
+.context

@@ -10,7 +10,16 @@
       "matchPackageNames": ["/^@opentelemetry\\//"]
     },
     {
-      "description": "eve 0.33 dropped hook contracts 1-9 (model identity moved from session.started to step.started call attribution) and supports only 10. @upstash/agentkit-eve-extension@0.4.0 is the latest release and still declares hook: 1, so 0.33 fails `eve build`. Drop this rule once Upstash publishes an extension built against hook contract 10.",
+      "description": "eve and the Upstash AgentKit extension are a matched pair: the extension's _manifest.json declares the contract versions it was built against, and `eve build` fails when the installed eve does not support them. Group them so neither moves alone.",
+      "groupName": "eve runtime",
+      "matchPackageNames": [
+        "eve",
+        "@upstash/agentkit-eve",
+        "@upstash/agentkit-eve-extension"
+      ]
+    },
+    {
+      "description": "eve 0.33 dropped hook contracts 1-9 (model identity moved from session.started runtime metadata to step.started call attribution); 0.33 supports only hook 10 and 0.34 supports 10-11. The newest extension, @upstash/agentkit-eve-extension@0.5.0, still requires hook 9 (plus tool 11, dynamicTool 12), so every eve >=0.33 fails `eve build`. Drop this rule once Upstash publishes an extension requiring hook contract >=10.",
       "matchPackageNames": ["eve"],
       "allowedVersions": "<0.33.0"
     }
