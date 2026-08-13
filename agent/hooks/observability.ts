@@ -15,8 +15,8 @@ import {
 ensureLogger();
 ensureMetrics();
 
-// The questions this hook exists to answer are listed under "Observability
-// design" in the README. Successful turns are left to the traces; what is
+// The questions this hook exists to answer are listed in
+// docs/observability.md. Successful turns are left to the traces; what is
 // here is the failure and throughput evidence that traces cannot answer in
 // aggregate, plus the rejections that never reach a trace at all
 // (agent/lib/observed-auth.ts).

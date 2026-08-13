@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/ahcarpenter/adam/security/advisories/new
+    about: Do not open a public issue. Report privately through a draft advisory.
+  - name: eve framework documentation
+    url: https://eve.dev/docs
+    about: Questions about the eve runtime, CLI, or APIs belong upstream, not here.
+  - name: Where to get help
+    url: https://github.com/ahcarpenter/adam/blob/main/SUPPORT.md
+    about: Where to ask about eve, the AI SDK, Upstash, Braintrust, and PostHog.

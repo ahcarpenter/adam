@@ -1,0 +1,74 @@
+name: Bug Report
+description: Something behaves differently than documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file this. Please do not report security
+        vulnerabilities here — see [SECURITY.md](https://github.com/ahcarpenter/adam/blob/main/SECURITY.md).
+  - type: input
+    id: contact
+    attributes:
+      label: Contact details (optional)
+      description: How can we reach you if we need more information?
+      placeholder: ex. email@example.com
+    validations:
+      required: false
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which part of the starter?
+      options:
+        - Agent / model wiring (agent/agent.ts)
+        - Channels and auth (agent/channels)
+        - Upstash AgentKit extension (agent/extensions)
+        - Observability — logs, metrics, traces (agent/lib, agent/hooks)
+        - Environment validation (agent/lib/env.ts)
+        - Evals
+        - Build, tooling, or CI
+        - Documentation
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the behavior you saw.
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: What did you run, in what order?
+      placeholder: Please write the steps as a list.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Versions
+      description: |
+        Output of `node --version`, `pnpm --version`, and the `eve` version from
+        your `package.json`. Include the commit of this repository if you have it.
+      render: Shell
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output (optional)
+      description: |
+        Paste any relevant output. This is rendered as code, so no backticks needed.
+        Redact API keys and tokens before pasting.
+      render: Shell
+    validations:
+      required: false

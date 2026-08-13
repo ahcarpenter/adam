@@ -137,7 +137,7 @@ Conventions:
 
 ## Observability Design
 
-Every signal answers one of five on-call questions, listed under "Observability design" in the README: are turns failing and why, how slow is a turn, are tool calls failing, are callers being throttled, what did one conversation do. Anything that answers none of them does not get added.
+Every signal answers one of five on-call questions, listed in `docs/observability.md`: are turns failing and why, how slow is a turn, are tool calls failing, are callers being throttled, what did one conversation do. Anything that answers none of them does not get added.
 
 `agent/instrumentation.ts` wires traces; logs and metrics bootstrap per worker process:
 
