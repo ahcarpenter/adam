@@ -4,6 +4,7 @@ import {
   MeterProvider,
   PeriodicExportingMetricReader,
 } from "@opentelemetry/sdk-metrics";
+import { AGENT_NAME } from "./agent-name";
 import { ensureOtelDiagnostics } from "./diagnostics";
 import { parseEnv } from "./env";
 import { telemetryResource } from "./resource";
@@ -56,7 +57,7 @@ let toolCallCounter: Counter | undefined;
 let rateLimitCounter: Counter | undefined;
 
 function meter() {
-  return metrics.getMeter("adam.agent");
+  return metrics.getMeter(`${AGENT_NAME}.agent`);
 }
 
 /** Terminal outcome of one turn. Cancellation is neither of the other two. */

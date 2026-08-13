@@ -1,9 +1,9 @@
 import { createRateLimitAuth, Ratelimit } from "@upstash/agentkit-eve";
 import { localDev, placeholderAuth, vercelOidc } from "eve/channels/auth";
 import { eveChannel } from "eve/channels/eve";
-import { ensureLogger } from "../lib/logger";
-import { ensureMetrics } from "../lib/metrics";
-import { observeRateLimit } from "../lib/observed-auth";
+import { ensureLogger } from "#lib/logger";
+import { ensureMetrics } from "#lib/metrics";
+import { observeRateLimit } from "#lib/observed-auth";
 
 ensureLogger();
 ensureMetrics();

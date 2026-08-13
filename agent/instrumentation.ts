@@ -3,15 +3,15 @@ import { registerOTel } from "@vercel/otel";
 import { braintrustEveInstrumentation, initLogger } from "braintrust";
 import { defineState } from "eve/context";
 import { defineInstrumentation } from "eve/instrumentation";
-import { parseEnv } from "./lib/env";
-import { braintrustProject } from "./lib/environment";
-import { ensureLogger } from "./lib/logger";
-import { ensureMetrics } from "./lib/metrics";
-import { reportServiceNameDrift } from "./lib/resource";
+import { parseEnv } from "#lib/env";
+import { braintrustProject } from "#lib/environment";
+import { ensureLogger } from "#lib/logger";
+import { ensureMetrics } from "#lib/metrics";
+import { reportServiceNameDrift } from "#lib/resource";
 import {
   attributeStep,
   type EarlierStepStartedResult,
-} from "./lib/step-attribution";
+} from "#lib/step-attribution";
 
 // Official Braintrust eve integration as the base: native capture of turns,
 // steps, tool calls, and subagent interactions (with agent/hooks/braintrust.ts),
