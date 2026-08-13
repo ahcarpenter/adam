@@ -1,3 +1,5 @@
+@SOUL.md
+
 # eve Agent App
 
 This project uses the eve framework. Before writing code, read the relevant guide
