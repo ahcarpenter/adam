@@ -61,7 +61,7 @@ jobs:
       # CODECOV_TOKEN repository secret is set; until then the upload fails
       # softly and no coverage status check is reported.
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/lcov.info
