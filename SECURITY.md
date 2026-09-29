@@ -49,9 +49,12 @@ traffic:
   `agent/instrumentation/otel.ts` sets `recordInputs` and `recordOutputs` to `true` for
   every environment and audience, and `agent/channels/eve.ts` classifies every
   conversation as `public` so eve does not cap private and anonymous ones to metadata.
-  Braintrust and PostHog therefore receive full message history and model output. Failure logs additionally carry a `details` payload that can include
-  model input. Treat both vendors as content stores, and turn these off before handling
-  regulated data. See [docs/observability.md](docs/observability.md).
+  Braintrust, PostHog, and the OTLP collector (when `OTEL_EXPORTER_OTLP_ENDPOINT` is set)
+  therefore receive full message history and model output. Failure logs additionally carry
+  a `details` payload that can include model input. Treat all three as content stores, and
+  turn these off before handling regulated data. Vercel Agent Runs receives metadata only:
+  `agent/instrumentation/agent-runs.ts` redacts inputs and outputs from every span it
+  gets. See [docs/observability.md](docs/observability.md).
 - **Secrets live in the environment.** `.env*` is git-ignored and `env.example` carries
   no values. Provision real credentials through your platform's secret storage, not the
   repository.
