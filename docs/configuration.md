@@ -41,7 +41,6 @@ error later.
 
 ## Dependency pinning
 
-`renovate.json` holds `eve` below `0.33.0` deliberately. eve 0.33 dropped hook contracts
-1–9, and the newest `@upstash/agentkit-eve-extension` still requires hook 9, so every
-eve `>=0.33` fails `eve build`. The rule carries that reasoning inline; drop it once
-Upstash publishes an extension requiring hook contract 10 or later.
+`renovate.json` groups `eve` with `@upstash/agentkit-eve` and
+`@upstash/agentkit-eve-extension` so they update as one unit; the rule's
+`description` carries the reasoning.
