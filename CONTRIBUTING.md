@@ -57,8 +57,8 @@ pnpm test:coverage                 # vitest, 95% thresholds
 
 `pnpm build` also prepares the agent's sandbox, as eve 0.68 does on every build. Off
 Vercel, eve picks Docker when the Docker daemon answers within about 5 seconds, and
-otherwise, on Apple Silicon macOS or Linux with KVM, falls back to microsandbox, which adam
-does not install, so the build fails.
+otherwise falls back to microsandbox (Apple Silicon macOS, or Linux with KVM) or else
+just-bash, neither of which adam installs, so the build fails.
 Either have Docker running, or run `pnpm build --skip-sandbox-prewarm` for a
 compile-only check, which is what CI runs. Do not deploy output built that way: it may
 not be able to start its sandbox.
