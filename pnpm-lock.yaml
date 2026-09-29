@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@ai-sdk/openai':
         specifier: ^4.0.40
-        version: 4.0.81(zod@4.4.3)
+        version: 4.0.81(zod@4.6.5)
       '@opentelemetry/api':
         specifier: ^1.9.1
         version: 1.9.1
@@ -40,10 +40,10 @@ importers:
         version: 8.13.2(@ai-sdk/provider@4.0.19)(@opentelemetry/api@1.9.1)(@opentelemetry/sdk-trace-base@2.11.0(@opentelemetry/api@1.9.1))(posthog-node@5.54.1)
       '@upstash/agentkit-eve':
         specifier: 0.3.0
-        version: 0.3.0(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.4.3))(eve@0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.4.3))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.4.3))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1)))
+        version: 0.3.0(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(eve@0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1)))
       '@upstash/agentkit-eve-extension':
         specifier: 0.4.0
-        version: 0.4.0(eve@0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.4.3))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.4.3))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1)))
+        version: 0.4.0(eve@0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1)))
       '@upstash/redis':
         specifier: ^1.38.2
         version: 1.39.0
@@ -52,13 +52,13 @@ importers:
         version: 2.1.3(@opentelemetry/api-logs@0.221.0)(@opentelemetry/api@1.9.1)(@opentelemetry/instrumentation@0.222.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0))(@opentelemetry/resources@2.11.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-logs@0.221.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-metrics@2.11.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.11.0(@opentelemetry/api@1.9.1))
       ai:
         specifier: ^7.0.38
-        version: 7.0.122(zod@4.4.3)
+        version: 7.0.122(zod@4.6.5)
       braintrust:
         specifier: ^3.27.0
-        version: 3.35.0(supports-color@7.2.0)(zod@4.4.3)
+        version: 3.35.0(supports-color@7.2.0)(zod@4.6.5)
       eve:
         specifier: ^0.32.0
-        version: 0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.4.3))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.4.3))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1))
+        version: 0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1))
       winston:
         specifier: ^3.19.0
         version: 3.19.0
@@ -66,8 +66,8 @@ importers:
         specifier: ^4.9.0
         version: 4.9.0
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.5
+        version: 4.6.5
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.7
@@ -2328,29 +2328,32 @@ packages:
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
+
 snapshots:
 
-  '@ai-sdk/gateway@4.0.100(zod@4.4.3)':
+  '@ai-sdk/gateway@4.0.100(zod@4.6.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.19
-      '@ai-sdk/provider-utils': 5.0.51(zod@4.4.3)
+      '@ai-sdk/provider-utils': 5.0.51(zod@4.6.5)
       '@vercel/oidc': 3.2.0
-      zod: 4.4.3
+      zod: 4.6.5
 
-  '@ai-sdk/openai@4.0.81(zod@4.4.3)':
+  '@ai-sdk/openai@4.0.81(zod@4.6.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.19
-      '@ai-sdk/provider-utils': 5.0.51(zod@4.4.3)
-      zod: 4.4.3
+      '@ai-sdk/provider-utils': 5.0.51(zod@4.6.5)
+      zod: 4.6.5
 
-  '@ai-sdk/provider-utils@5.0.51(zod@4.4.3)':
+  '@ai-sdk/provider-utils@5.0.51(zod@4.6.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.19
       '@standard-schema/spec': 1.1.0
       '@workflow/serde': 4.1.0
       eventsource-parser: 3.1.1
       undici: 7.30.0
-      zod: 4.4.3
+      zod: 4.6.5
 
   '@ai-sdk/provider@4.0.19':
     dependencies:
@@ -2812,7 +2815,7 @@ snapshots:
       '@posthog/core': 1.55.2
       posthog-node: 5.54.1
       uuid: 11.1.1
-      zod: 4.4.3
+      zod: 4.6.5
     optionalDependencies:
       '@ai-sdk/provider': 4.0.19
       '@opentelemetry/api': 1.9.1
@@ -2965,27 +2968,27 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@upstash/agentkit-ai-sdk@0.2.0(ai@7.0.122(zod@4.4.3))':
+  '@upstash/agentkit-ai-sdk@0.2.0(ai@7.0.122(zod@4.6.5))':
     dependencies:
       '@upstash/agentkit-sdk': 0.2.0(@upstash/redis@1.39.0)
       '@upstash/redis': 1.39.0
-      ai: 7.0.122(zod@4.4.3)
+      ai: 7.0.122(zod@4.6.5)
+      zod: 4.6.5
+
+  '@upstash/agentkit-eve-extension@0.4.0(eve@0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1)))':
+    dependencies:
+      '@upstash/agentkit-sdk': 0.2.0(@upstash/redis@1.39.0)
+      '@upstash/redis': 1.39.0
+      eve: 0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1))
       zod: 4.4.3
 
-  '@upstash/agentkit-eve-extension@0.4.0(eve@0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.4.3))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.4.3))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1)))':
+  '@upstash/agentkit-eve@0.3.0(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(eve@0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1)))':
     dependencies:
+      '@upstash/agentkit-ai-sdk': 0.2.0(ai@7.0.122(zod@4.6.5))
       '@upstash/agentkit-sdk': 0.2.0(@upstash/redis@1.39.0)
       '@upstash/redis': 1.39.0
-      eve: 0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.4.3))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.4.3))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1))
-      zod: 4.4.3
-
-  '@upstash/agentkit-eve@0.3.0(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.4.3))(eve@0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.4.3))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.4.3))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1)))':
-    dependencies:
-      '@upstash/agentkit-ai-sdk': 0.2.0(ai@7.0.122(zod@4.4.3))
-      '@upstash/agentkit-sdk': 0.2.0(@upstash/redis@1.39.0)
-      '@upstash/redis': 1.39.0
-      eve: 0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.4.3))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.4.3))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1))
-      zod: 4.4.3
+      eve: 0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1))
+      zod: 4.6.5
     transitivePeerDependencies:
       - ai
 
@@ -2993,7 +2996,7 @@ snapshots:
     dependencies:
       '@upstash/ratelimit': 2.2.0(@upstash/redis@1.39.0)
       '@upstash/redis': 1.39.0
-      zod: 4.4.3
+      zod: 4.6.5
 
   '@upstash/core-analytics@0.0.10':
     dependencies:
@@ -3090,12 +3093,12 @@ snapshots:
 
   acorn@8.18.0: {}
 
-  ai@7.0.122(zod@4.4.3):
+  ai@7.0.122(zod@4.6.5):
     dependencies:
-      '@ai-sdk/gateway': 4.0.100(zod@4.4.3)
+      '@ai-sdk/gateway': 4.0.100(zod@4.6.5)
       '@ai-sdk/provider': 4.0.19
-      '@ai-sdk/provider-utils': 5.0.51(zod@4.4.3)
-      zod: 4.4.3
+      '@ai-sdk/provider-utils': 5.0.51(zod@4.6.5)
+      zod: 4.6.5
 
   ajv@8.20.0:
     dependencies:
@@ -3140,7 +3143,7 @@ snapshots:
     dependencies:
       balanced-match: 4.0.4
 
-  braintrust@3.35.0(supports-color@7.2.0)(zod@4.4.3):
+  braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5):
     dependencies:
       '@next/env': 14.2.35
       '@types/react': 18.3.31
@@ -3170,8 +3173,8 @@ snapshots:
       termi-link: 1.1.0
       unplugin: 2.3.11
       uuid: 11.1.1
-      zod: 4.4.3
-      zod-to-json-schema: 3.25.2(zod@4.4.3)
+      zod: 4.6.5
+      zod-to-json-schema: 3.25.2(zod@4.6.5)
     optionalDependencies:
       '@braintrust/bt-darwin-arm64': 0.12.0
       '@braintrust/bt-darwin-x64': 0.12.0
@@ -3340,14 +3343,14 @@ snapshots:
 
   etag@1.8.1: {}
 
-  eve@0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.4.3))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.4.3))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1)):
+  eve@0.32.0(@opentelemetry/api@1.9.1)(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1)):
     dependencies:
-      ai: 7.0.122(zod@4.4.3)
+      ai: 7.0.122(zod@4.6.5)
       nitro: 3.0.260610-beta(@upstash/redis@1.39.0)(dotenv@16.6.1)(jiti@2.7.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1))
       undici: 8.9.0
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
-      braintrust: 3.35.0(supports-color@7.2.0)(zod@4.4.3)
+      braintrust: 3.35.0(supports-color@7.2.0)(zod@4.6.5)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -3580,7 +3583,7 @@ snapshots:
       tinyglobby: 0.2.17
       unbash: 4.0.11
       yaml: 2.9.1
-      zod: 4.4.3
+      zod: 4.6.5
 
   kuler@2.0.0: {}
 
@@ -4182,8 +4185,10 @@ snapshots:
 
   yaml@2.9.1: {}
 
-  zod-to-json-schema@3.25.2(zod@4.4.3):
+  zod-to-json-schema@3.25.2(zod@4.6.5):
     dependencies:
-      zod: 4.4.3
+      zod: 4.6.5
 
   zod@4.4.3: {}
+
+  zod@4.6.5: {}
