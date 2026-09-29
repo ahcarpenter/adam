@@ -59,9 +59,12 @@ so no single startup call reaches them all).
   The trace policy in `otel.ts` states `recordInputs`/`recordOutputs`
   explicitly and turns both on for every environment and audience, where
   eve's default would keep content only in development and for public
-  conversations: both vendors receive full message history and model output.
-  A test pins the policy. Turn both off before pointing this at regulated
-  traffic.
+  conversations. eve also caps content to metadata for private and unknown
+  conversations outside development whatever the policy says, so
+  `agent/channels/eve.ts` sets `audience: "public"` (trace capture only; `auth`
+  still controls access). Together, both vendors receive full message history
+  and model output. Tests pin the policy and the audience. Turn both off, and
+  drop the audience, before pointing this at regulated traffic.
 - **Request spans** — `traceChannelRequests: true` wraps each inbound channel
   request in a low-cardinality SERVER span (route template and method, never
   the concrete URL) that the turn trace links to. PostHog and Braintrust keep

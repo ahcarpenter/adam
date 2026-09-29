@@ -13,9 +13,11 @@ export default otel({
   // Stated rather than inherited: full message history and model output ride
   // on every model-call span, to Braintrust and to PostHog, in every
   // environment and for every audience. eve's default would keep content
-  // only in development and for public conversations. That content is the
-  // debugging the boilerplate is built around, and it means both vendors
-  // hold whatever your users type. Set both to false before pointing this at
-  // regulated or otherwise sensitive traffic.
+  // only in development and for public conversations. eve also caps content
+  // for non-public conversations outside development after this policy runs,
+  // which is why agent/channels/eve.ts classifies every conversation public.
+  // That content is the debugging the boilerplate is built around, and it
+  // means both vendors hold whatever your users type. Set both to false
+  // before pointing this at regulated or otherwise sensitive traffic.
   tracePolicy: () => ({ emit: true, recordInputs: true, recordOutputs: true }),
 });

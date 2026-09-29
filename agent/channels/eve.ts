@@ -29,4 +29,10 @@ export default eveChannel({
     // or use none() for a public demo.
     placeholderAuth(),
   ],
+  // Trace content capture, not access (auth above still decides who gets
+  // in). eve caps content to metadata for private and unknown conversations
+  // outside development, after and regardless of the tracePolicy in
+  // agent/instrumentation/otel.ts, so the full capture that policy states
+  // only holds if every conversation is classified public here.
+  audience: "public",
 });
