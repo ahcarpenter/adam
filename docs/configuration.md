@@ -13,7 +13,7 @@ Copy `env.example` to `.env.local` and fill in:
 | `POSTHOG_PROJECT_TOKEN`                               | Log export                                                      |
 | `LOG_LEVEL`                                           | winston level, closed set (defaults to `info`)                  |
 | `OTEL_SERVICE_NAME`                                   | `service.name` on logs and metrics (defaults to the agent name) |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`                         | OTLP collector: metrics, and all spans via `"auto"`             |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`                         | OTLP collector: metrics, and all spans                          |
 
 Startup fails fast on an invalid environment in every mode, local dev
 included. `POSTHOG_HOST`, `LOG_LEVEL`, and `OTEL_SERVICE_NAME` default;
@@ -41,7 +41,6 @@ error later.
 
 ## Dependency pinning
 
-`renovate.json` holds `eve` below `0.33.0` deliberately. eve 0.33 dropped hook contracts
-1–9, and the newest `@upstash/agentkit-eve-extension` still requires hook 9, so every
-eve `>=0.33` fails `eve build`. The rule carries that reasoning inline; drop it once
-Upstash publishes an extension requiring hook contract 10 or later.
+`renovate.json` groups `eve` with `@upstash/agentkit-eve` and
+`@upstash/agentkit-eve-extension` so they update as one unit; the rule's
+`description` carries the reasoning.

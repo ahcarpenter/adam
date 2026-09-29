@@ -30,10 +30,10 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(logLevels).default("info"),
   /**
    * `service.name` on exported logs and metrics. Defaults to the agent name,
-   * which is what traces are tagged with; `instrumentation.ts` reports a
-   * mismatch against the name eve actually resolved. `@vercel/otel` reads
-   * the same variable for the trace pipeline, so overriding it moves all
-   * three signals together.
+   * which is what traces are tagged with; agent/instrumentation/startup.ts
+   * reports a mismatch against the name eve actually resolved. eve's trace
+   * pipeline reads the same variable, so overriding it moves all three
+   * signals together.
    */
   OTEL_SERVICE_NAME: z.string().min(1).default(AGENT_NAME),
   /**

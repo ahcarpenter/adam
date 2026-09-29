@@ -62,7 +62,7 @@ See [docs/configuration.md](docs/configuration.md) for the environment variables
 
 Coverage is gated at 95% for both the project and the patch. The unit-testable surface
 is `agent/lib/**`; the wiring files that the eve runtime executes at startup —
-`agent/agent.ts`, `agent/instrumentation.ts`, `agent/channels/**`,
+`agent/agent.ts`, `agent/instrumentation/**`, `agent/channels/**`,
 `agent/extensions/**`, `agent/hooks/**` — are excluded from coverage in both
 [`vitest.config.ts`](vitest.config.ts) and [`codecov.yml`](codecov.yml). If you add
 logic worth testing, put it in `agent/lib/` so it can be tested.

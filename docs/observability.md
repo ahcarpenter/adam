@@ -25,7 +25,8 @@ of them should not be added.
 
 ## Signals
 
-`agent/instrumentation.ts` is the wiring point for traces;
+`agent/instrumentation/` is the wiring point for traces, one file per
+destination plus `otel.ts` for the settings they share;
 `agent/lib/logger.ts` and `agent/lib/metrics.ts` bootstrap the other two per
 worker process (the eve runtime runs authored modules in separate workers,
 so no single startup call reaches them all).
@@ -38,7 +39,7 @@ so no single startup call reaches them all).
   `sessionId` and a stable `event` name. Failure lines include the event's
   `details` payload, which is shaped by whatever failed and can carry model
   input — PostHog Logs is therefore a content store, on the same footing as
-  the traces `recordInputs` already sends. Every handler runs inside
+  the traces the trace policy already sends. Every handler runs inside
   `neverThrow`: eve escalates a thrown hook to `turn.failed`, and one on the
   failure cascade to `session.failed`, so instrumentation must never be able
   to end the session it is describing.
@@ -49,25 +50,39 @@ so no single startup call reaches them all).
   are dotted and namespaced under `agent.` (not `eve.`, which the runtime
   reserves), and every one is a closed set — outcome, channel kind, tool
   name; ids and addresses stay in logs and traces where cardinality is free.
-- **Traces** — the official Braintrust eve integration
-  (`braintrustEveInstrumentation` + `agent/hooks/braintrust.ts`) captures
-  turns, steps, tool calls, and subagent interactions natively in Braintrust;
-  a `PostHogSpanProcessor` sends agent traces/generations to PostHog LLM
-  analytics, linked to the authenticated user via `posthog.distinct_id`.
-  `recordInputs`/`recordOutputs` are stated explicitly in
-  `agent/instrumentation.ts` and are on: both vendors receive full message
-  history and model output. Turn them off before pointing this at regulated
-  traffic.
+- **Traces** — eve emits one GenAI span tree per turn (`invoke_agent`,
+  `agent.step`, `chat`, `execute_tool`). `braintrust.ts` sends its AI spans
+  to Braintrust through `@braintrust/otel`'s `BraintrustSpanProcessor`
+  (Braintrust's own eve integration still declares a `capture` field eve no
+  longer accepts); `posthog.ts` sends them to PostHog LLM analytics, linked to
+  the authenticated user through the `posthog_distinct_id` runtime context.
+  The trace policy in `otel.ts` states `recordInputs`/`recordOutputs`
+  explicitly and turns both on for every environment and audience, where
+  eve's default would keep content only in development and for public
+  conversations. eve also caps content to metadata for private and unknown
+  conversations outside development whatever the policy says, so
+  `agent/channels/eve.ts` sets `audience: "public"` (trace capture only; `auth`
+  still controls access). Together, Braintrust, PostHog, and the OTLP
+  collector (when `OTEL_EXPORTER_OTLP_ENDPOINT` is set) receive full message
+  history and model output: all three are content stores, and PostHog and
+  Braintrust also get the user's principal id. Vercel Agent Runs is not:
+  `agent-runs.ts` redacts inputs and outputs from every span eve sends it
+  and drops principal ids, the principal-scoped memory store id, and
+  app-authored runtime context (the PostHog distinct id), so it receives
+  operational metadata without message content or user identifiers (model,
+  token counts, timing, span names, status, and eve's opaque run and
+  session ids, which Agent Runs groups traces by). Tests pin the policy,
+  what each destination receives, and the audience. Turn both off, and drop the audience,
+  before pointing this at regulated traffic.
 - **Request spans** — `traceChannelRequests: true` wraps each inbound channel
   request in a low-cardinality SERVER span (route template and method, never
-  the concrete URL) that parents the turn trace. PostHog's exporter drops
-  non-AI spans, so these ride the `"auto"` span processor instead: Vercel's
-  tracing integration when the project has one, otherwise an OTLP exporter
-  built from `OTEL_EXPORTER_OTLP_*`. Naming any processor replaces that
-  default, which is why `"auto"` is listed alongside PostHog's.
+  the concrete URL) that the turn trace links to. PostHog and Braintrust keep
+  only AI spans, so these reach Agent Runs on Vercel (preview and
+  production), and `otlp.ts` sends every span to the
+  collector `OTEL_EXPORTER_OTLP_ENDPOINT` names when it is set.
 
 One deliberate omission: sampling is 100%, which suits this volume — set
-`OTEL_TRACES_SAMPLER` (honored by `@vercel/otel`) when traffic makes that
+`OTEL_TRACES_SAMPLER` (honored by eve's trace pipeline) when traffic makes that
 expensive.
 
 Telemetry is split by environment so an incident dashboard never shows local

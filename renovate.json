@@ -17,11 +17,6 @@
         "@upstash/agentkit-eve",
         "@upstash/agentkit-eve-extension"
       ]
-    },
-    {
-      "description": "eve 0.33 dropped hook contracts 1-9 (model identity moved from session.started runtime metadata to step.started call attribution); 0.33 supports only hook 10 and 0.34 supports 10-11. The newest extension, @upstash/agentkit-eve-extension@0.5.0, still requires hook 9 (plus tool 11, dynamicTool 12), so every eve >=0.33 fails `eve build`. Drop this rule once Upstash publishes an extension requiring hook contract >=10.",
-      "matchPackageNames": ["eve"],
-      "allowedVersions": "<0.33.0"
     }
   ]
 }

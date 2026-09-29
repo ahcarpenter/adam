@@ -17,14 +17,14 @@ than this issue tracker.
 
 The same applies to the other dependencies wired in here:
 
-| Topic                                   | Where to ask                                       |
-| --------------------------------------- | -------------------------------------------------- |
-| eve runtime, CLI, tools, channels       | <https://eve.dev/docs>                             |
-| AI SDK, providers, model behavior       | <https://ai-sdk.dev/docs>                          |
-| Upstash Redis, AgentKit                 | <https://upstash.com/docs/redis/sdks/agentkit/eve> |
-| Braintrust traces and evals             | <https://www.braintrust.dev/docs>                  |
-| PostHog logs and LLM analytics          | <https://posthog.com/docs>                         |
-| OpenTelemetry semantics, `@vercel/otel` | <https://opentelemetry.io/docs>                    |
+| Topic                             | Where to ask                                       |
+| --------------------------------- | -------------------------------------------------- |
+| eve runtime, CLI, tools, channels | <https://eve.dev/docs>                             |
+| AI SDK, providers, model behavior | <https://ai-sdk.dev/docs>                          |
+| Upstash Redis, AgentKit           | <https://upstash.com/docs/redis/sdks/agentkit/eve> |
+| Braintrust traces and evals       | <https://www.braintrust.dev/docs>                  |
+| PostHog logs and LLM analytics    | <https://posthog.com/docs>                         |
+| OpenTelemetry semantics           | <https://opentelemetry.io/docs>                    |
 
 Ask here when the question is about how _this_ repository wires those pieces together.
 

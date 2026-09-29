@@ -12,7 +12,7 @@ export default defineConfig({
         // Wiring-only files: executed by the eve runtime at startup, not unit-testable.
         // Exclusions are mirrored in codecov.yml.
         "agent/agent.ts",
-        "agent/instrumentation.ts",
+        "agent/instrumentation/**",
         "agent/channels/**",
         "agent/extensions/**",
         "agent/hooks/**",
