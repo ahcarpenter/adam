@@ -8,7 +8,7 @@ export interface FlushableProvider {
 /**
  * Drains a provider's batch queue before the process ends.
  *
- * `registerOTel` owns this for the trace pipeline, but the log and metric
+ * eve owns this for the trace pipeline it registers, but the log and metric
  * providers are built per worker (the eve runtime runs authored modules in
  * separate processes, so no single startup call can reach them all) and
  * nothing else flushes them.

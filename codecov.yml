@@ -12,7 +12,7 @@ coverage:
 # Must mirror the coverage.exclude list in vitest.config.ts.
 ignore:
   - "agent/agent.ts"
-  - "agent/instrumentation.ts"
+  - "agent/instrumentation/**"
   - "agent/channels/**"
   - "agent/extensions/**"
   - "agent/hooks/**"

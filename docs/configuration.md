@@ -13,7 +13,7 @@ Copy `env.example` to `.env.local` and fill in:
 | `POSTHOG_PROJECT_TOKEN`                               | Log export                                                      |
 | `LOG_LEVEL`                                           | winston level, closed set (defaults to `info`)                  |
 | `OTEL_SERVICE_NAME`                                   | `service.name` on logs and metrics (defaults to the agent name) |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`                         | OTLP collector: metrics, and all spans via `"auto"`             |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`                         | OTLP collector: metrics, and all spans                          |
 
 Startup fails fast on an invalid environment in every mode, local dev
 included. `POSTHOG_HOST`, `LOG_LEVEL`, and `OTEL_SERVICE_NAME` default;
