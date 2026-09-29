@@ -52,9 +52,11 @@ traffic:
   Braintrust, PostHog, and the OTLP collector (when `OTEL_EXPORTER_OTLP_ENDPOINT` is set)
   therefore receive full message history and model output. Failure logs additionally carry
   a `details` payload that can include model input. Treat all three as content stores, and
-  turn these off before handling regulated data. Vercel Agent Runs receives metadata only:
+  turn these off before handling regulated data. Vercel Agent Runs receives operational
+  metadata without message content or user identifiers:
   `agent/instrumentation/agent-runs.ts` redacts inputs and outputs from every span it
-  gets. See [docs/observability.md](docs/observability.md).
+  gets and drops principal ids, the principal-scoped memory store id, and app-authored
+  runtime context such as the PostHog distinct id. See [docs/observability.md](docs/observability.md).
 - **Secrets live in the environment.** `.env*` is git-ignored and `env.example` carries
   no values. Provision real credentials through your platform's secret storage, not the
   repository.

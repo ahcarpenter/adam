@@ -64,10 +64,15 @@ so no single startup call reaches them all).
   `agent/channels/eve.ts` sets `audience: "public"` (trace capture only; `auth`
   still controls access). Together, Braintrust, PostHog, and the OTLP
   collector (when `OTEL_EXPORTER_OTLP_ENDPOINT` is set) receive full message
-  history and model output: all three are content stores. Vercel Agent Runs
-  is not: `agent-runs.ts` redacts inputs and outputs from every span eve
-  sends it, so it receives metadata only. Tests pin the policy, the Agent
-  Runs redaction, and the audience. Turn both off, and drop the audience,
+  history and model output: all three are content stores, and PostHog and
+  Braintrust also get the user's principal id. Vercel Agent Runs is not:
+  `agent-runs.ts` redacts inputs and outputs from every span eve sends it
+  and drops principal ids, the principal-scoped memory store id, and
+  app-authored runtime context (the PostHog distinct id), so it receives
+  operational metadata without message content or user identifiers (model,
+  token counts, timing, span names, status, and eve's opaque run and
+  session ids, which Agent Runs groups traces by). Tests pin the policy,
+  what each destination receives, and the audience. Turn both off, and drop the audience,
   before pointing this at regulated traffic.
 - **Request spans** — `traceChannelRequests: true` wraps each inbound channel
   request in a low-cardinality SERVER span (route template and method, never
