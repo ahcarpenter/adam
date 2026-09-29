@@ -22,7 +22,7 @@
 
 ## Quick Start
 
-Requires [Node.js](https://nodejs.org) `24.x` and pnpm `11.x`.
+Requires [Node.js](https://nodejs.org) `24.x` and pnpm `12.x`.
 
 Click **Use this template** above, or clone it:
 
@@ -95,6 +95,14 @@ pnpm test:coverage  # vitest run --coverage (95% thresholds)
 pnpm eval           # eve eval
 pnpm knip           # dead code / unused dependency scan
 ```
+
+`pnpm build` also prepares the agent's sandbox, as eve 0.68 does on every build. Off
+Vercel, eve picks Docker when the Docker daemon answers within about 5 seconds, and
+otherwise falls back to microsandbox (Apple Silicon macOS, or Linux with KVM) or else
+just-bash, neither of which adam installs, so the build fails.
+Either have Docker running, or run `pnpm build --skip-sandbox-prewarm` for a
+compile-only check, which is what CI runs. Do not deploy output built that way: it may
+not be able to start its sandbox.
 
 ## Learn More
 
