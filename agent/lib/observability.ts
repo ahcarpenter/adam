@@ -13,8 +13,8 @@ import { recordToolCall, recordTurn, type TurnOutcome } from "./metrics";
 //
 // Failure `details` is logged. It is shaped by whatever failed and can carry
 // model input or tool payloads, which makes PostHog Logs another store
-// holding message content — the same categories `recordInputs`/
-// `recordOutputs` already send to Braintrust and PostHog traces.
+// holding message content — the same categories the trace policy in
+// agent/instrumentation/otel.ts already sends to Braintrust and PostHog.
 
 /**
  * Cap on in-flight turn start times. A turn whose start was observed in a

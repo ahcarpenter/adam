@@ -39,7 +39,7 @@ so no single startup call reaches them all).
   `sessionId` and a stable `event` name. Failure lines include the event's
   `details` payload, which is shaped by whatever failed and can carry model
   input — PostHog Logs is therefore a content store, on the same footing as
-  the traces `recordInputs` already sends. Every handler runs inside
+  the traces the trace policy already sends. Every handler runs inside
   `neverThrow`: eve escalates a thrown hook to `turn.failed`, and one on the
   failure cascade to `session.failed`, so instrumentation must never be able
   to end the session it is describing.
@@ -56,9 +56,11 @@ so no single startup call reaches them all).
   (Braintrust's own eve integration still declares a `capture` field eve no
   longer accepts); `posthog.ts` sends them to PostHog LLM analytics, linked to
   the authenticated user through the `posthog_distinct_id` runtime context.
-  `recordInputs`/`recordOutputs` are stated explicitly in
-  `agent/instrumentation.ts` and are on: both vendors receive full message
-  history and model output. Turn them off before pointing this at regulated
+  The trace policy in `otel.ts` states `recordInputs`/`recordOutputs`
+  explicitly and turns both on for every environment and audience, where
+  eve's default would keep content only in development and for public
+  conversations: both vendors receive full message history and model output.
+  A test pins the policy. Turn both off before pointing this at regulated
   traffic.
 - **Request spans** — `traceChannelRequests: true` wraps each inbound channel
   request in a low-cardinality SERVER span (route template and method, never

@@ -45,8 +45,9 @@ There are no tagged releases yet. Fixes land on `main`.
 This repository is a template. Two of its defaults matter before you point it at real
 traffic:
 
-- **Telemetry exports message content.** `recordInputs` and `recordOutputs` are enabled
-  in `agent/instrumentation.ts`, so Braintrust and PostHog receive full message history
+- **Telemetry exports message content.** The trace policy in
+  `agent/instrumentation/otel.ts` sets `recordInputs` and `recordOutputs` to `true` for
+  every environment and audience, so Braintrust and PostHog receive full message history
   and model output. Failure logs additionally carry a `details` payload that can include
   model input. Treat both vendors as content stores, and turn these off before handling
   regulated data. See [docs/observability.md](docs/observability.md).
