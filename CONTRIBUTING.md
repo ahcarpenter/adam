@@ -220,15 +220,14 @@ loads them on demand, with nothing to install.
 ### Testing expectations
 
 Coverage is gated at 95% for both the project and the patch. The unit-testable surface
-is `agent/lib/**`; the wiring files that the eve runtime executes at startup —
-`agent/agent.ts`, `agent/instrumentation/**`, `agent/channels/**`,
-`agent/extensions/**`, `agent/hooks/**` — are excluded from coverage in both
-[`vitest.config.ts`](vitest.config.ts) and [`codecov.yml`](codecov.yml). If you add
-logic worth testing, put it in `agent/lib/` so it can be tested.
+is `agent/lib/**` and `scripts/sign-in.ts`; the files that the eve runtime executes,
+and the `pnpm connect` entry point, are excluded from coverage in both
+[`vitest.config.ts`](vitest.config.ts), which lists them, and
+[`codecov.yml`](codecov.yml). If you add logic worth testing, put it in `agent/lib/` so
+it can be tested.
 
-Eve snapshots tool files and resolves only package imports, so any `agent/tools/*.ts`
-file must be self-contained — repeat configuration rather than importing shared `agent/`
-modules.
+For what a tool file may import, see
+[Adding tools](docs/capabilities.md#adding-tools).
 
 ## Pull request lifecycle
 

@@ -6,7 +6,8 @@
   your domain documents; the index is created reactively on first use), and
   durable **chat history**. See the
   [extension configuration reference](https://upstash.com/docs/redis/sdks/agentkit/eve#extension-configuration-reference).
-  Memory and chat history are keyed by the caller's principal id, except for
+  Memory and chat history are keyed by the caller's principal id, so a user who
+  [signs in](configuration.md#sign-in) has their own. The exception is
   anonymous callers, who all share one principal id and are keyed by session id
   instead (`agent/lib/agentkit-user.ts`), and that anonymous data expires 24
   hours after the session's last turn (`agent/hooks/anonymous-expiry.ts`).
@@ -18,7 +19,9 @@
 
 ## Adding tools
 
-Eve snapshots tool files and resolves only package imports, so any future
-`agent/tools/*.ts` file must be self-contained — repeat config rather than
-importing shared `agent/` modules. Shared _authored_ helpers belong in
-`agent/lib/` (import-only slot).
+A tool file in `agent/tools/` may import shared _authored_ helpers from
+`agent/lib/` (import-only slot): the four files there do, and
+`agent/caller-tools.test.ts` pins that it works in a built and started agent
+under eve 0.68. Those four are eve's own shell, file and web-fetch tools,
+offered per caller on a deployment open to anonymous callers; see
+[Anonymous access](configuration.md#anonymous-access).
