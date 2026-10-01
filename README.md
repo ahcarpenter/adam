@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/thumbnail.png" alt="eve Enterprise Starter: memory and RAG, traces and logs, evals, and strict CI gates for eve agents, already wired together. Built on eve, Upstash, Braintrust, PostHog, and OpenTelemetry." width="800">
+  <img src="docs/assets/thumbnail.png" alt="eve Enterprise Starter: memory and document search, traces and logs, evals, and strict CI gates for eve agents, already wired together. Built on eve, Upstash, Braintrust, PostHog, and OpenTelemetry." width="800">
 </p>
 
 <p align="center">
