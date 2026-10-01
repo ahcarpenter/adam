@@ -1,35 +1,36 @@
+<img src="docs/assets/thumbnail.png" alt="eve Enterprise Starter: memory and document search, traces and logs, evals, and strict CI gates for eve agents, already wired together. Built on eve, Upstash, Braintrust, PostHog, and OpenTelemetry." width="100%">
+
 # adam: Enterprise starter for eve agents
 
-<p align="center">
-  <a href="https://github.com/ahcarpenter/adam/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ahcarpenter/adam/ci.yml?branch=main" alt="CI"></a>
-  <a href="https://github.com/ahcarpenter/adam/blob/main/LICENSE"><img src="https://img.shields.io/github/license/ahcarpenter/adam" alt="MIT license"></a>
-  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-24.x-brightgreen" alt="Node 24.x"></a>
-  <a href="https://eve.dev"><img src="https://img.shields.io/badge/built%20with-eve-black" alt="Built with eve"></a>
-</p>
+[![CI](https://img.shields.io/github/actions/workflow/status/ahcarpenter/adam/ci.yml?branch=main&label=CI&logo=githubactions&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://github.com/ahcarpenter/adam/actions/workflows/ci.yml)
+[![MIT license](https://img.shields.io/github/license/ahcarpenter/adam?label=License&logo=opensourceinitiative&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://github.com/ahcarpenter/adam/blob/main/LICENSE)
+[![Node 24.x](https://img.shields.io/badge/Node-24.x-000?logo=nodedotjs&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://nodejs.org)
+[![Built with eve](https://img.shields.io/badge/Built%20with-eve-000?logo=vercel&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://eve.dev)
 
-<p align="center">
-  <img src="docs/assets/thumbnail.png" alt="eve Enterprise Starter: memory and document search, traces and logs, evals, and strict CI gates for eve agents, already wired together. Built on eve, Upstash, Braintrust, PostHog, and OpenTelemetry." width="800">
-</p>
+Meet **adam**, a production-shaped starting point for [eve](https://eve.dev) agents,
+with observability, evals, dependency automation, and a 95% coverage gate already wired
+together.
 
-<p align="center">
-  <code>adam</code> is a production-shaped starting point for <a href="https://eve.dev">eve</a> agents — observability, evals, dependency automation, and a 95% coverage gate already wired together. Fork it and delete what you do not need, instead of assembling it a second time.
-</p>
-
-<p align="center">
-  <a href="#deploy-to-vercel">Deploy</a> ·
-  <a href="#quick-start">Quick Start</a> ·
-  <a href="docs/configuration.md">Configuration</a> ·
-  <a href="docs/observability.md">Observability</a> ·
-  <a href="docs/capabilities.md">Capabilities</a> ·
-  <a href="CONTRIBUTING.md">Contributing</a> ·
-  <a href="https://eve.dev/docs">eve docs</a>
-</p>
-
-## Deploy to Vercel
+adam gives your agent memory, document search and chat history on Upstash Redis, sends
+its logs and AI traces to PostHog and Braintrust, and runs lint, type checks, tests and
+a real `eve build` in CI. You fork it and delete what you do not need, instead of
+assembling it a second time.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam&project-name=adam&repository-name=adam&env=BRAINTRUST_API_KEY%2CPOSTHOG_PROJECT_TOKEN&envDescription=Braintrust%20API%20key%20and%20PostHog%20project%20token.%20The%20build%20fails%20until%20both%20are%20set.%20Upstash%20Redis%20is%20provisioned%20for%20you%2C%20and%20the%20model%20runs%20through%20Vercel%20AI%20Gateway%20and%20needs%20no%20key.&envLink=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam%2Fblob%2Fmain%2Fdocs%2Fconfiguration.md&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%2C%22protocol%22%3A%22storage%22%7D%5D&demo-title=adam%20live%20demo&demo-description=Conversations%20are%20recorded.%20No%20chat%20page%20in%20the%20browser%3A%20chat%20from%20eve%27s%20terminal%20client.&demo-url=https%3A%2F%2Fadam-umber.vercel.app&demo-image=https%3A%2F%2Fraw.githubusercontent.com%2Fahcarpenter%2Fadam%2Fmain%2Fdocs%2Fassets%2Fthumbnail.png)
 
-The button clones the repository and asks for two values: `BRAINTRUST_API_KEY` and
+The button asks for two values and shows a demo card for a live deployment, where
+conversations are recorded. [Deploy to Vercel](#deploy-to-vercel) explains both.
+
+[Quick Start](#quick-start) ·
+[Configuration](docs/configuration.md) ·
+[Observability](docs/observability.md) ·
+[Capabilities](docs/capabilities.md) ·
+[Contributing](CONTRIBUTING.md) ·
+[eve docs](https://eve.dev/docs)
+
+## Deploy to Vercel
+
+The button above clones the repository and asks for two values: `BRAINTRUST_API_KEY` and
 `POSTHOG_PROJECT_TOKEN`. The build fails until both are set. The PostHog host defaults
 to the US address, `https://us.i.posthog.com`: set `POSTHOG_HOST` for a project in
 another region. Redis needs no value typed in: the button creates an Upstash Redis
