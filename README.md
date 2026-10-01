@@ -42,8 +42,9 @@ which a Vercel deployment reaches with its own project credentials and bills to 
 team's AI Gateway credits. See [Configuration](docs/configuration.md) for what each
 value is.
 
-A fresh deployment is closed: only the project's own deployments and its Vercel team
-can reach it. To let people in, register a
+A deployed copy is closed: until you add a sign-in provider or set
+`ALLOW_ANONYMOUS_ACCESS=true`, it answers only the project's own deployments and its
+Vercel team. To let people in, register a
 [Sign in with Vercel](https://vercel.com/docs/sign-in-with-vercel) app on your team and
 set its client ID as `VERCEL_APP_CLIENT_ID`. Anyone who signs in is then a named user
 with their own memory and chat history, and `pnpm connect <url>` signs in from a
@@ -59,7 +60,7 @@ Decide who may sign in, and set a spend limit, first.
 visitor who does not sign in can chat and has none of those tools, and a signed-in
 caller keeps the shell, file and web-fetch tools. See
 [Sign-in](docs/configuration.md#sign-in) and
-[Anonymous access](docs/configuration.md#anonymous-access).
+[Anonymous access](docs/configuration.md#anonymous-access) before opening it.
 
 The button also shows a demo card for a live deployment of this repository at
 <https://adam-umber.vercel.app>, which has been opened that way. It has no chat page in
