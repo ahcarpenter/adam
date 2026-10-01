@@ -40,7 +40,8 @@ jobs:
       # step here — a dependency bump can pass CI and fail only at deploy.
       # The values are placeholders: agent.ts validates the environment at
       # module load, which discovery triggers, but nothing connects during a
-      # build.
+      # build. The model runs through the Vercel AI Gateway, whose credential
+      # is only needed for a model call, so the build sets none.
       # Off Vercel, eve's default sandbox picks its provider by probing the
       # runner: Docker if the daemon answers within 5 s, else microsandbox on
       # a KVM host, whose optional package adam does not install. A slow
@@ -50,8 +51,6 @@ jobs:
       - name: Build (eve compile + bundle)
         run: pnpm build --skip-sandbox-prewarm
         env:
-          OPENAI_API_KEY: sk-ci
-          OPENAI_MODEL: gpt-5
           UPSTASH_REDIS_REST_URL: https://ci.upstash.io
           UPSTASH_REDIS_REST_TOKEN: ci-token
           BRAINTRUST_API_KEY: ci-key
