@@ -8,7 +8,8 @@ coverage:
       default:
         target: 95%
 
-# Wiring-only files executed by the eve runtime at startup, not unit-testable.
+# Wiring-only files executed by the eve runtime at startup, not unit-testable,
+# test support, and the entry point of `pnpm connect`.
 # Must mirror the coverage.exclude list in vitest.config.ts.
 ignore:
   - "agent/agent.ts"
@@ -16,4 +17,7 @@ ignore:
   - "agent/channels/**"
   - "agent/extensions/**"
   - "agent/hooks/**"
+  - "agent/tools/**"
+  - "scripts/connect.ts"
+  - "**/*.fixtures.ts"
   - "**/*.test.ts"

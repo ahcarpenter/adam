@@ -156,6 +156,26 @@ describe("parseEnv", () => {
     },
   );
 
+  // validEnv carries no client ID: a fork that has registered no Sign in with
+  // Vercel app must still build, so the variable cannot be required.
+  it("leaves sign-in unconfigured by default", () => {
+    expect(parseEnv(validEnv).VERCEL_APP_CLIENT_ID).toBeUndefined();
+  });
+
+  it("keeps a Sign in with Vercel client ID", () => {
+    expect(
+      parseEnv({ ...validEnv, VERCEL_APP_CLIENT_ID: "cl_adam" })
+        .VERCEL_APP_CLIENT_ID,
+    ).toBe("cl_adam");
+  });
+
+  // Read loosely, an empty value would leave sign-in off without a word.
+  it("rejects an empty Sign in with Vercel client ID", () => {
+    expect(() => parseEnv({ ...validEnv, VERCEL_APP_CLIENT_ID: "" })).toThrow(
+      /VERCEL_APP_CLIENT_ID/,
+    );
+  });
+
   describe("Vercel Marketplace names for Upstash", () => {
     it("accepts the KV_ pair when the UPSTASH_ pair is absent", () => {
       const env = parseEnv(marketplaceEnv);
