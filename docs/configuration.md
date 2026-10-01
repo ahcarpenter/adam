@@ -141,9 +141,10 @@ caller, so an expired sign-in fails loudly instead of quietly becoming a visitor
   keyed by that id (`agent/lib/agentkit-user.ts`), so they follow the person from one
   session to the next and are shared with no one. They are not expired: the 24-hour
   expiry applies to anonymous sessions only.
-- **The shell, file and web-fetch tools on a deployment that also admits anonymous
-  callers**, where an anonymous caller gets none of eve's default tools. See
-  [Anonymous access](#anonymous-access).
+- **eve's default tools, the shared search index and the model budget, unless the
+  deployment is open to anonymous callers.** See
+  [What a signed-in caller can use](#what-a-signed-in-caller-can-use) below before
+  deciding who may sign in.
 - **Their conversations are traced in full, exactly as every conversation is.**
   Signing in does not reduce what is captured. Braintrust, PostHog, and the OTLP
   collector when one is set receive a signed-in user's complete messages and the
@@ -155,6 +156,38 @@ caller, so an expired sign-in fails loudly instead of quietly becoming a visitor
   which this feature changes: the `audience: "public"` line in `agent/channels/eve.ts`
   and the trace policy in `agent/instrumentation/otel.ts`.
   [docs/observability.md](observability.md) describes both.
+
+### What a signed-in caller can use
+
+Signing in is not only an identity. What it opens depends on both settings:
+
+- **`ALLOW_ANONYMOUS_ACCESS` off, `VERCEL_APP_CLIENT_ID` unset.** Nobody can sign in.
+- **`ALLOW_ANONYMOUS_ACCESS` off, `VERCEL_APP_CLIENT_ID` set.** A signed-in caller goes
+  from a `401` to the whole agent: every one of eve's default tools, which are the
+  sandbox shell (`bash`), sandbox files (`read_file`, `write_file`), `web_fetch`,
+  `web_search` and the sub-agent (`agent`); the document search tools, whose index is
+  shared by every caller; their own memory and chat history; and the model budget,
+  limited only by the rate limit of 20 messages a minute per address.
+- **`ALLOW_ANONYMOUS_ACCESS` on, `VERCEL_APP_CLIENT_ID` unset.** Nobody can sign in.
+  Every caller is an anonymous visitor.
+- **`ALLOW_ANONYMOUS_ACCESS` on, `VERCEL_APP_CLIENT_ID` set.** The agent is built
+  without eve's default tools, for every caller, signed-in callers included. A
+  signed-in caller can use exactly what an anonymous visitor can, chat, the shared
+  document search and the model budget, and gains an identity: memory and chat history
+  of their own that follow them between sessions and do not expire.
+
+So with `ALLOW_ANONYMOUS_ACCESS` off, an app that lets any Vercel account sign in
+gives the sandbox shell, the files, web fetch, web search, the sub-agent, the search
+index and the model budget to anyone who has a Vercel account, and an account is free
+to create. Unless that is what you intend, restrict the app to members of your team,
+as [Register the app](#register-the-app) describes.
+
+Put a spend limit in front of the model before you let anyone sign in. Every turn a
+signed-in caller takes is a model call billed to the Vercel team's AI Gateway credits.
+Set an AI Gateway
+[budget](https://vercel.com/docs/ai-gateway/observability-and-spend/budgets) for the
+project first. The rate limit slows one address down; it does not cap what the
+deployment spends.
 
 The helper below asks Vercel for the `openid` scope only, and the app is registered
 with that scope only, so the ID token identifies the user by id. Vercel documents that
@@ -205,8 +238,15 @@ It is read when the agent starts. Leave it out of the Deploy button, like
 By default anyone with a Vercel account can sign in to an app. Vercel can instead
 restrict an app to members of the team that owns it, a setting on the app described
 under [sign-in access](https://vercel.com/docs/sign-in-with-vercel/manage-from-dashboard).
-adam's own production app keeps the default, anyone with a Vercel account, because
-signing in there only gives a caller their own identity.
+Restrict yours to team members unless you mean every account holder to have
+[what a signed-in caller can use](#what-a-signed-in-caller-can-use).
+
+adam's own production app keeps the default, anyone with a Vercel account. That is
+acceptable there because production runs with `ALLOW_ANONYMOUS_ACCESS` on: eve's
+default tools are off for everyone, and anyone can already chat without signing in, so
+signing in adds an identity and separate memory and nothing else. Turning
+`ALLOW_ANONYMOUS_ACCESS` off on such a deployment would hand every Vercel account
+holder the default tools, so restrict the app to team members before doing that.
 
 ### Connect from a terminal
 
@@ -263,9 +303,8 @@ keeps that until it configures [sign-in](#sign-in), opens the agent as described
 or puts its own auth provider in the list.
 
 `ALLOW_ANONYMOUS_ACCESS=true` ends the list with eve's `none()` instead, which accepts
-every caller without a credential, and builds the agent without eve's default tools,
-so an anonymous caller is offered none of them. It exists for a public chat demo
-deployment.
+every caller without a credential, and removes eve's default tools from the agent.
+It exists for a public chat demo deployment.
 Set it on the deployment, not in the repository, and leave it out of the Deploy
 button: a fork should have to choose it.
 
@@ -277,24 +316,18 @@ Before turning it on:
   the project before the first public request, and do not turn this on without one.
   The rate limit below slows one address down; it does not cap what the deployment
   spends.
-- **Turning it on takes eve's default tools away from anonymous callers, and some of
-  them from everyone.** An anonymous visitor must not reach the sandbox shell
-  (`bash`), sandbox files (`read_file`, `write_file`), `web_fetch`, `web_search`, or
-  the sub-agent (`agent`), so `agent/agent.ts` sets `defaultTools: false` whenever
-  this setting is `true`. Four of them come back for a caller who has an identity,
-  meaning anyone the auth list recognized before it reached `none()`: a signed-in
-  user, the project's own deployments and Vercel team, and local development.
-  `agent/tools/bash.ts`, `read_file.ts`, `write_file.ts` and `web_fetch.ts` then export
-  a resolver that eve runs at the start of every turn, which offers the tool to an
-  identified caller and nothing to an anonymous one. The rule is one function,
-  `identifiedCaller` in `agent/lib/caller.ts`, and it judges the caller of the turn,
-  not of the session: an anonymous follow-up on a signed-in user's session gets no
-  tools. `web_search`, the sub-agent and `task_cancel` do not come back for anyone,
-  because eve fixes those when the agent is built and cannot decide them per caller.
-  `load_skill` stays off as well: adam ships no skills for it to load. To give
-  signed-in callers every default tool, run a deployment with this setting off. With it off, nothing changes: the four files export eve's own tool, and
-  the agent has every default tool, as before. `agent/caller-tools.test.ts` runs a
-  built agent to pin all of this.
+- **Turning it on turns eve's default tools off, for everyone.** An anonymous
+  visitor must not reach the sandbox shell (`bash`), sandbox files (`read_file`,
+  `write_file`), `web_fetch`, `web_search`, or the sub-agent (`agent`), so
+  `agent/agent.ts` sets `defaultTools: false` whenever this setting is `true`. That
+  also drops `task_cancel` and `load_skill`, which only serve those. This is one
+  deployment-wide switch on purpose, so the restriction covers every caller,
+  including a [signed-in](#sign-in) user and the ones `vercelOidc()` and `localDev()`
+  identify. eve 0.68 could decide the shell, file and web-fetch tools per caller
+  through dynamic tool resolvers, but web search and the sub-agent tool are fixed
+  when the agent is built, and a single switch is the simpler and safer form. To give
+  signed-in callers the default tools back, run a deployment with this setting off.
+  With it off, nothing changes: the agent has every default tool, as before.
 - **Document search stays, and its index is shared.** What remains is chat plus
   what the AgentKit extension contributes, none of it a default tool: memory, chat
   history, and the document search tools `search`, `search_aggregate` and
@@ -305,12 +338,9 @@ Before turning it on:
 - **Set it for the build as well as the running process.** The auth list is read
   when the agent starts, the tool set when `eve build` or `eve dev` compiles it. On
   Vercel both read the same project variable, and changing it takes a redeploy. If
-  you build and start in separate steps elsewhere, give both the same value. An
-  agent built with one value and started with the other does not serve: under eve
-  0.68 every request gets a `500`, and the log names one of the four tool files,
-  because what the file exports no longer matches what was compiled. That includes
-  the dangerous case, an agent built with `false`, default tools compiled in, and
-  started with `true`.
+  you build and start in separate steps elsewhere, give both the same value: an
+  agent built with `false` and started with `true` would admit anonymous callers
+  with the default tools still compiled in.
 - **The rate limit is 20 messages a minute per address.** The limiter is the first
   entry in the auth list, so it applies to anonymous callers before `none()` accepts
   them, and the 21st message inside a minute gets a `403`. It counts `POST`s, so one
@@ -351,11 +381,10 @@ A visitor connects with eve's terminal client, with nothing to sign in to:
 npx eve remote connect --url https://your-deployment.vercel.app
 ```
 
-The setting decides two things: the last entry of the auth list, and which of eve's
-default tools the agent is built with. `vercelOidc()`, sign-in when it is configured,
-and `localDev()` still run ahead of that last entry, so the callers they recognize are
-identified as before. Those callers get the shell, file and web-fetch tools; no caller
-on such a deployment gets web search or the sub-agent.
+The setting decides two things: the last entry of the auth list, and whether the
+agent has eve's default tools. `vercelOidc()`, sign-in when it is configured, and
+`localDev()` still run ahead of that last entry, so the callers they recognize are
+identified as before, with the same reduced tool set as everyone else.
 
 ## One-time setup (repo owner)
 
