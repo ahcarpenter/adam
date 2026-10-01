@@ -27,10 +27,12 @@ missing one.
 The PostHog token and host are accepted under two pairs of names in the same way:
 `POSTHOG_PROJECT_TOKEN` and `POSTHOG_HOST`, or `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` and
 `NEXT_PUBLIC_POSTHOG_HOST`. The second pair is what the PostHog integration from the
-[Vercel Marketplace](https://vercel.com/marketplace/posthog) sets on a project,
-including the one the README's Deploy button creates, so that deployment needs no
-PostHog value entered by hand. The prefix is only part of the name: adam is not a
-Next.js app, and the project token is not a secret. When either `POSTHOG_` name is set,
+[Vercel Marketplace](https://vercel.com/marketplace/posthog) sets on a project, so a
+project with that integration added needs no PostHog value entered by hand. The
+README's Deploy button does not add it: the button asks for `POSTHOG_PROJECT_TOKEN`,
+because whether a Deploy button can provision that kind of Marketplace product has not
+been confirmed. The prefix is only part of the name: adam is not a Next.js app, and the
+project token is not a secret. When either `POSTHOG_` name is set,
 that pair is used and the other is ignored, so a token set by hand is never sent to the
 integration's host. The `NEXT_PUBLIC_` pair must be set whole, with no default host: the
 integration sets the host of the region its token belongs to, and nothing sent to the
@@ -104,7 +106,7 @@ maps each `402` and `403` to its cause.
    `renovate.json` and opens an onboarding PR.
 3. **Upstash / Braintrust / PostHog**: provision and set the env vars above
    (locally in `.env.local`, on Vercel via `vercel env`). The Deploy button
-   provisions Upstash and PostHog itself, and asks only for the Braintrust key.
+   provisions Upstash itself.
 4. **AI Gateway**: confirm the Vercel team can make gateway calls, and get a local
    credential; see [Model access](#model-access).
 5. **GitHub repository settings**: mark the repository as a template — the

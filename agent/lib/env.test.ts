@@ -300,8 +300,8 @@ describe("parseEnv", () => {
       ).toThrow(/NEXT_PUBLIC_POSTHOG_HOST/);
     });
 
-    // What the README's Deploy button leaves on a project: both stores'
-    // names, and the one value it asks for.
+    // A project with both Marketplace integrations added: both stores' names,
+    // and the Braintrust key.
     it("accepts a deployment that has only the Marketplace names", () => {
       expect(
         parseEnv({

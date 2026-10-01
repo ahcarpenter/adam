@@ -76,11 +76,12 @@ const marketplaceUpstashSchema = z
  * processor both take the values `parseEnv` returns.
  *
  * The `NEXT_PUBLIC_` pair is what the PostHog integration on the Vercel
- * Marketplace sets on a project, which is how the README's Deploy button
- * provisions PostHog without asking for a value. The prefix is only part of
- * the name here, since adam is not a Next.js app. That pair has no default
- * host: the integration always sets one, for the region its token belongs
- * to, and nothing sent to the other region's host reaches the project.
+ * Marketplace sets on a project that adds it. The README's Deploy button does
+ * not provision PostHog, since whether a button can provision that kind of
+ * product is unconfirmed. The prefix is only part of the name here, since
+ * adam is not a Next.js app. That pair has no default host: the integration
+ * always sets one, for the region its token belongs to, and nothing sent to
+ * the other region's host reaches the project.
  */
 const posthogSchema = z.object({
   POSTHOG_HOST: z.url().default("https://us.i.posthog.com"),

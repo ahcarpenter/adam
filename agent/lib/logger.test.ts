@@ -143,8 +143,8 @@ describe("ensureLogger", () => {
     expect(logs.setGlobalLoggerProvider).toHaveBeenCalledTimes(1);
   });
 
-  // A project deployed from the README's button has PostHog only under the
-  // names its Vercel Marketplace integration sets.
+  // A project with the PostHog Vercel Marketplace integration added has
+  // PostHog only under the names that integration sets.
   it("exports to the Marketplace integration's host and token when only its names are set", () => {
     for (const [key, value] of Object.entries(validEnv)) vi.stubEnv(key, value);
     vi.stubEnv("POSTHOG_PROJECT_TOKEN", undefined);
