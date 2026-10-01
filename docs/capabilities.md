@@ -6,7 +6,8 @@
   your domain documents; the index is created reactively on first use), and
   durable **chat history**. See the
   [extension configuration reference](https://upstash.com/docs/redis/sdks/agentkit/eve#extension-configuration-reference).
-  Memory and chat history are keyed by the caller's principal id, except for
+  Memory and chat history are keyed by the caller's principal id, so a user who
+  [signs in](configuration.md#sign-in) has their own. The exception is
   anonymous callers, who all share one principal id and are keyed by session id
   instead (`agent/lib/agentkit-user.ts`), and that anonymous data expires 24
   hours after the session's last turn (`agent/hooks/anonymous-expiry.ts`).

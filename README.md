@@ -42,10 +42,17 @@ which a Vercel deployment reaches with its own project credentials and bills to 
 team's AI Gateway credits. See [Configuration](docs/configuration.md) for what each
 value is.
 
-A deployed copy is closed: until you add a sign-in provider or set
-`ALLOW_ANONYMOUS_ACCESS=true`, it answers only the project's own deployments and its
-Vercel team. See [Anonymous access](docs/configuration.md#anonymous-access) before
-opening it.
+A fresh deployment is closed: only the project's own deployments and its Vercel team
+can reach it. To let people in, register a
+[Sign in with Vercel](https://vercel.com/docs/sign-in-with-vercel) app on your team and
+set its client ID as `VERCEL_APP_CLIENT_ID`. Anyone who signs in is then a named user
+with their own memory and chat history, and `pnpm connect <url>` signs in from a
+terminal and opens eve's client. It takes no vendor account, no secret, and no package;
+the cost is that only someone with a Vercel account can sign in. A signed-in user's
+conversations are traced in full, like every conversation. `ALLOW_ANONYMOUS_ACCESS=true`
+opens a deployment to anyone instead, or as well. See
+[Sign-in](docs/configuration.md#sign-in) and
+[Anonymous access](docs/configuration.md#anonymous-access).
 
 The button also shows a demo card for a live deployment of this repository at
 <https://adam-umber.vercel.app>, which has been opened that way. It has no chat page in
@@ -107,6 +114,9 @@ pnpm dev            # TUI at http://127.0.0.1:2000
   change the model.
 - **Memory, RAG, and chat history** — Upstash Redis via AgentKit, plus per-caller rate
   limiting and a tool cache. See [capabilities](docs/capabilities.md).
+- **Sign-in** - optional Sign in with Vercel, verified with eve's own OIDC verifier, and
+  a terminal helper that signs in through the browser. Off until a deployment sets one
+  public value. See [Sign-in](docs/configuration.md#sign-in).
 - **Observability** — structured winston logs to PostHog, AI traces to Braintrust and
   PostHog LLM analytics, OTel metrics to any OTLP collector. The design, the three
   alerts worth paging on, and how to verify the pipeline are in
@@ -146,6 +156,7 @@ pnpm format:check   # biome check + prettier --check
 pnpm test           # vitest run
 pnpm test:coverage  # vitest run --coverage (95% thresholds)
 pnpm eval           # eve eval
+pnpm connect <url>  # sign in with Vercel, then open eve's client on a deployed agent
 pnpm knip           # dead code / unused dependency scan
 ```
 

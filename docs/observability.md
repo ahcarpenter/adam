@@ -66,7 +66,9 @@ so no single startup call reaches them all).
   still controls access). Together, Braintrust, PostHog, and the OTLP
   collector (when `OTEL_EXPORTER_OTLP_ENDPOINT` is set) receive full message
   history and model output: all three are content stores, and PostHog and
-  Braintrust also get the user's principal id. Vercel Agent Runs is not:
+  Braintrust also get the user's principal id. For a user who signed in with
+  Vercel that id contains their Vercel user id, and nothing about signing in
+  narrows the capture. Vercel Agent Runs is not:
   `agent-runs.ts` redacts inputs and outputs from every span eve sends it
   and drops principal ids, the principal-scoped memory store id, and
   app-authored runtime context (the PostHog distinct id), so it receives

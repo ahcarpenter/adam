@@ -4,7 +4,8 @@
   "type": "module",
   "imports": {
     "#*": "./agent/*.ts",
-    "#evals/*": "./evals/*.ts"
+    "#evals/*": "./evals/*.ts",
+    "#scripts/*": "./scripts/*.ts"
   },
   "scripts": {
     "build": "eve build",
@@ -19,6 +20,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "eval": "eve eval",
+    "connect": "node scripts/connect.ts",
     "knip": "knip",
     "prepare": "husky"
   },

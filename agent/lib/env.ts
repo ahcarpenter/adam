@@ -56,6 +56,15 @@ const baseSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((value) => value === "true"),
+  /**
+   * Client ID of this deployment's Sign in with Vercel app. Set, it adds
+   * sign-in to the auth list in agent/channels/eve.ts: a caller presenting
+   * an ID token Vercel issued to this app is accepted as a named user. Not a
+   * secret: it is the public identifier every sign-in request carries.
+   * Optional on purpose, since a required one would fail the build of every
+   * fork that has not registered an app.
+   */
+  VERCEL_APP_CLIENT_ID: z.string().min(1).optional(),
 });
 
 /**
