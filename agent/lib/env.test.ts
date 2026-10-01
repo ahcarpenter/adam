@@ -349,6 +349,7 @@ describe("parseEnv", () => {
           posthogMarketplaceEnv.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
         LOG_LEVEL: "info",
         OTEL_SERVICE_NAME: "adam",
+        ALLOW_ANONYMOUS_ACCESS: false,
       });
     });
   });
