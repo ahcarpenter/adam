@@ -108,7 +108,7 @@ describe("otel trace policy", () => {
 // only, while PostHog and Braintrust keep all of it.
 const operational = {
   "gen_ai.operation.name": "chat",
-  "gen_ai.request.model": "gpt-5",
+  "gen_ai.request.model": "openai/gpt-5",
   "gen_ai.usage.input_tokens": 12,
   "agent.principal.current.type": "user",
   "agent.run.id": "run_1",
@@ -135,7 +135,7 @@ function exportThrough(
 ): ExportedSpan[] {
   recorded.destinations[name].length = 0;
   const span = {
-    name: "chat gpt-5",
+    name: "chat openai/gpt-5",
     attributes,
     events: [],
     status: { code: 0 },
@@ -165,7 +165,7 @@ describe("trace destinations", () => {
 
       expect(exportThrough("agentRuns", attributes)).toEqual([
         {
-          name: "chat gpt-5",
+          name: "chat openai/gpt-5",
           attributes: { "agent.channel.audience": audience, ...operational },
         },
       ]);
@@ -183,7 +183,7 @@ describe("trace destinations", () => {
       };
 
       expect(exportThrough(name, attributes)).toEqual([
-        { name: "chat gpt-5", attributes },
+        { name: "chat openai/gpt-5", attributes },
       ]);
     },
   );

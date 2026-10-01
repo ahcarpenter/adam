@@ -20,8 +20,13 @@ const logLevels = [
 ] as const;
 
 const envSchema = z.object({
-  OPENAI_API_KEY: z.string().min(1),
-  OPENAI_MODEL: z.string().min(1),
+  /**
+   * The agent's model, routed through the Vercel AI Gateway. There is no
+   * gateway credential in this schema on purpose: a Vercel deployment
+   * authenticates with the project's OIDC token and sets no variable at all,
+   * so requiring one would fail the very deployments that need none.
+   */
+  AI_GATEWAY_MODEL: z.string().min(1).default("openai/gpt-5"),
   UPSTASH_REDIS_REST_URL: z.url(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
   BRAINTRUST_API_KEY: z.string().min(1),
