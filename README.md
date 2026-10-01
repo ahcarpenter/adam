@@ -30,13 +30,22 @@
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam&project-name=adam&repository-name=adam&env=BRAINTRUST_API_KEY%2CPOSTHOG_PROJECT_TOKEN&envDescription=Braintrust%20API%20key%20and%20PostHog%20project%20token.%20The%20build%20fails%20until%20both%20are%20set.%20Upstash%20Redis%20is%20provisioned%20for%20you%2C%20and%20the%20model%20runs%20through%20Vercel%20AI%20Gateway%20and%20needs%20no%20key.&envLink=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam%2Fblob%2Fmain%2Fdocs%2Fconfiguration.md&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%2C%22protocol%22%3A%22storage%22%7D%5D)
 
 The button clones the repository and asks for two values: `BRAINTRUST_API_KEY` and
-`POSTHOG_PROJECT_TOKEN`. The build fails until both are set. Redis asks for nothing: the
-button creates an Upstash Redis store from the Vercel Marketplace, which sets
-`KV_REST_API_URL` and `KV_REST_API_TOKEN` on the project. The model asks for nothing
-either: it runs through the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway),
+`POSTHOG_PROJECT_TOKEN`. The build fails until both are set. The PostHog host defaults
+to the US address, `https://us.i.posthog.com`: set `POSTHOG_HOST` for a project in
+another region. Redis needs no value typed in: the button creates an Upstash Redis
+store from the Vercel Marketplace, which sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+on the project. At that step the form asks you to choose a plan and a region for the
+store. A team that has not added the Upstash integration before may also be asked to
+[accept its terms](https://vercel.com/docs/cli/integration). The model asks for
+nothing: it runs through the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway),
 which a Vercel deployment reaches with its own project credentials and bills to the
 team's AI Gateway credits. See [Configuration](docs/configuration.md) for what each
 value is.
+
+A deployed copy is closed: until you add a sign-in provider or set
+`ALLOW_ANONYMOUS_ACCESS=true`, it answers only the project's own deployments and its
+Vercel team. See [Anonymous access](docs/configuration.md#anonymous-access) before
+opening it.
 
 ## Quick Start
 
