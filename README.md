@@ -58,7 +58,8 @@ cp env.example .env.local
 
 Every variable without a default must be filled: the Upstash Redis URL and token (under
 the `UPSTASH_REDIS_REST_` names or the Vercel Marketplace's `KV_REST_API_` names),
-`BRAINTRUST_API_KEY`, and `POSTHOG_PROJECT_TOKEN`. See
+`BRAINTRUST_API_KEY`, and `POSTHOG_PROJECT_TOKEN` (or the Vercel Marketplace's
+`NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` and `NEXT_PUBLIC_POSTHOG_HOST`). See
 [Configuration](docs/configuration.md) for the full table.
 
 The model runs through the Vercel AI Gateway, so a local run also needs a gateway

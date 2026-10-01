@@ -164,7 +164,7 @@ Env vars (all validated in `agent/lib/env.ts`):
 AI_GATEWAY_MODEL (default openai/gpt-5; an AI Gateway model ID, read at build)
 UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN (or the Vercel Marketplace's KV_REST_API_URL, KV_REST_API_TOKEN)
 BRAINTRUST_API_KEY
-POSTHOG_HOST (default https://us.i.posthog.com), POSTHOG_PROJECT_TOKEN
+POSTHOG_HOST (default https://us.i.posthog.com), POSTHOG_PROJECT_TOKEN (or NEXT_PUBLIC_POSTHOG_HOST, NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN, the names the Vercel Marketplace's PostHog integration sets; the Deploy button does not provision PostHog)
 LOG_LEVEL (default info; closed winston set)
 OTEL_SERVICE_NAME (default adam)
 OTEL_EXPORTER_OTLP_ENDPOINT (optional; metrics stay off without it)

@@ -13,6 +13,18 @@ const marketplaceEnv = {
   KV_REST_API_TOKEN: "marketplace-token",
 };
 
+const { POSTHOG_PROJECT_TOKEN, ...withoutPosthog } = validEnv;
+
+/**
+ * What the PostHog integration on the Vercel Marketplace sets on a project.
+ * The host is the EU one so that a fallback to the US default would show.
+ */
+const posthogMarketplaceEnv = {
+  ...withoutPosthog,
+  NEXT_PUBLIC_POSTHOG_HOST: "https://eu.i.posthog.com",
+  NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "phc_marketplace",
+};
+
 describe("parseEnv", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -236,5 +248,109 @@ describe("parseEnv", () => {
         );
       },
     );
+  });
+
+  describe("Vercel Marketplace names for PostHog", () => {
+    it("accepts the NEXT_PUBLIC_ pair when the POSTHOG_ pair is absent", () => {
+      const env = parseEnv(posthogMarketplaceEnv);
+      expect(env.POSTHOG_PROJECT_TOKEN).toBe(
+        posthogMarketplaceEnv.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
+      );
+      expect(env.POSTHOG_HOST).toBe(
+        posthogMarketplaceEnv.NEXT_PUBLIC_POSTHOG_HOST,
+      );
+      expect(env).not.toHaveProperty("NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN");
+      expect(env).not.toHaveProperty("NEXT_PUBLIC_POSTHOG_HOST");
+    });
+
+    it("prefers the POSTHOG_ pair when both are present", () => {
+      const env = parseEnv({
+        ...posthogMarketplaceEnv,
+        POSTHOG_PROJECT_TOKEN,
+        POSTHOG_HOST: "https://us.posthog.example",
+      });
+      expect(env.POSTHOG_PROJECT_TOKEN).toBe(POSTHOG_PROJECT_TOKEN);
+      expect(env.POSTHOG_HOST).toBe("https://us.posthog.example");
+    });
+
+    // A token set by hand belongs to the default region unless a host is set
+    // beside it, never to the region of the integration's token.
+    it("keeps the default host for a POSTHOG_ token beside a NEXT_PUBLIC_ pair", () => {
+      const env = parseEnv({ ...posthogMarketplaceEnv, POSTHOG_PROJECT_TOKEN });
+      expect(env.POSTHOG_PROJECT_TOKEN).toBe(POSTHOG_PROJECT_TOKEN);
+      expect(env.POSTHOG_HOST).toBe("https://us.i.posthog.com");
+    });
+
+    it("treats an empty POSTHOG_ pair as absent", () => {
+      const env = parseEnv({
+        ...posthogMarketplaceEnv,
+        POSTHOG_PROJECT_TOKEN: "",
+        POSTHOG_HOST: "",
+      });
+      expect(env.POSTHOG_PROJECT_TOKEN).toBe(
+        posthogMarketplaceEnv.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
+      );
+      expect(env.POSTHOG_HOST).toBe(
+        posthogMarketplaceEnv.NEXT_PUBLIC_POSTHOG_HOST,
+      );
+    });
+
+    it.each([
+      ["NEXT_PUBLIC_POSTHOG_HOST", "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN"],
+      ["NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN", "NEXT_PUBLIC_POSTHOG_HOST"],
+    ] as const)("names %s when only %s is set", (missing, present) => {
+      const source = {
+        ...withoutPosthog,
+        [present]: posthogMarketplaceEnv[present],
+      };
+      expect(() => parseEnv(source)).toThrow(new RegExp(missing));
+      expect(() => parseEnv(source)).not.toThrow(/at POSTHOG_/);
+    });
+
+    // The integration's token would otherwise be sent to this host.
+    it("names POSTHOG_PROJECT_TOKEN when only POSTHOG_HOST is set, even beside a whole NEXT_PUBLIC_ pair", () => {
+      const source = {
+        ...posthogMarketplaceEnv,
+        POSTHOG_HOST: "https://us.i.posthog.com",
+      };
+      expect(() => parseEnv(source)).toThrow(/at POSTHOG_PROJECT_TOKEN/);
+      expect(() => parseEnv(source)).not.toThrow(/NEXT_PUBLIC_POSTHOG/);
+    });
+
+    it("rejects a malformed NEXT_PUBLIC_POSTHOG_HOST", () => {
+      expect(() =>
+        parseEnv({
+          ...posthogMarketplaceEnv,
+          NEXT_PUBLIC_POSTHOG_HOST: "eu.i.posthog.com",
+        }),
+      ).toThrow(/NEXT_PUBLIC_POSTHOG_HOST/);
+    });
+
+    // A project with both Marketplace integrations added: both stores' names,
+    // and the Braintrust key.
+    it("accepts a deployment that has only the Marketplace names", () => {
+      expect(
+        parseEnv({
+          BRAINTRUST_API_KEY: validEnv.BRAINTRUST_API_KEY,
+          KV_REST_API_URL: marketplaceEnv.KV_REST_API_URL,
+          KV_REST_API_TOKEN: marketplaceEnv.KV_REST_API_TOKEN,
+          NEXT_PUBLIC_POSTHOG_HOST:
+            posthogMarketplaceEnv.NEXT_PUBLIC_POSTHOG_HOST,
+          NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN:
+            posthogMarketplaceEnv.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
+        }),
+      ).toEqual({
+        AI_GATEWAY_MODEL: "openai/gpt-5",
+        BRAINTRUST_API_KEY: validEnv.BRAINTRUST_API_KEY,
+        UPSTASH_REDIS_REST_URL: marketplaceEnv.KV_REST_API_URL,
+        UPSTASH_REDIS_REST_TOKEN: marketplaceEnv.KV_REST_API_TOKEN,
+        POSTHOG_HOST: posthogMarketplaceEnv.NEXT_PUBLIC_POSTHOG_HOST,
+        POSTHOG_PROJECT_TOKEN:
+          posthogMarketplaceEnv.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
+        LOG_LEVEL: "info",
+        OTEL_SERVICE_NAME: "adam",
+        ALLOW_ANONYMOUS_ACCESS: false,
+      });
+    });
   });
 });

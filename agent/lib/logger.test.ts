@@ -143,6 +143,23 @@ describe("ensureLogger", () => {
     expect(logs.setGlobalLoggerProvider).toHaveBeenCalledTimes(1);
   });
 
+  // A project with the PostHog Vercel Marketplace integration added has
+  // PostHog only under the names that integration sets.
+  it("exports to the Marketplace integration's host and token when only its names are set", () => {
+    for (const [key, value] of Object.entries(validEnv)) vi.stubEnv(key, value);
+    vi.stubEnv("POSTHOG_PROJECT_TOKEN", undefined);
+    vi.stubEnv("POSTHOG_HOST", undefined);
+    vi.stubEnv("NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN", "phc_marketplace");
+    vi.stubEnv("NEXT_PUBLIC_POSTHOG_HOST", "https://eu.i.posthog.com");
+    winston.configure({ transports: [] });
+    ensureLogger();
+
+    expect(otlpLogExporter).toHaveBeenCalledWith({
+      url: "https://eu.i.posthog.com/i/v1/logs",
+      headers: { Authorization: "Bearer phc_marketplace" },
+    });
+  });
+
   it("names the service and environment on exported records", () => {
     for (const [key, value] of Object.entries(validEnv)) vi.stubEnv(key, value);
     vi.stubEnv("VERCEL_ENV", "preview");

@@ -25,6 +25,21 @@ needs no Redis value entered by hand. When both pairs are set, the `UPSTASH_` pa
 used. A pair must be set whole: one name without the other fails startup, naming the
 missing one.
 
+The PostHog token and host are accepted under two pairs of names in the same way:
+`POSTHOG_PROJECT_TOKEN` and `POSTHOG_HOST`, or `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` and
+`NEXT_PUBLIC_POSTHOG_HOST`. The second pair is what the PostHog integration from the
+[Vercel Marketplace](https://vercel.com/marketplace/posthog) sets on a project, so a
+project with that integration added needs no PostHog value entered by hand. The
+README's Deploy button does not add it: the button asks for `POSTHOG_PROJECT_TOKEN`,
+because whether a Deploy button can provision that kind of Marketplace product has not
+been confirmed. The prefix is only part of the name: adam is not a Next.js app, and the
+project token is not a secret. When either `POSTHOG_` name is set,
+that pair is used and the other is ignored, so a token set by hand is never sent to the
+integration's host. The `NEXT_PUBLIC_` pair must be set whole, with no default host: the
+integration sets the host of the region its token belongs to, and nothing sent to the
+other region's host reaches the project. A PostHog organization the Marketplace creates
+is billed through the Vercel team, and its region is chosen when it is created.
+
 Startup fails fast on an invalid environment in every mode, local dev
 included. `AI_GATEWAY_MODEL`, `POSTHOG_HOST`, `LOG_LEVEL`, `OTEL_SERVICE_NAME`,
 and `ALLOW_ANONYMOUS_ACCESS` default; `OTEL_EXPORTER_OTLP_ENDPOINT` is genuinely

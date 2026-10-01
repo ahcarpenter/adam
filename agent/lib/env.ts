@@ -28,8 +28,6 @@ const baseSchema = z.object({
    */
   AI_GATEWAY_MODEL: z.string().min(1).default("openai/gpt-5"),
   BRAINTRUST_API_KEY: z.string().min(1),
-  POSTHOG_HOST: z.url().default("https://us.i.posthog.com"),
-  POSTHOG_PROJECT_TOKEN: z.string().min(1),
   LOG_LEVEL: z.enum(logLevels).default("info"),
   /**
    * `service.name` on exported logs and metrics. Defaults to the agent name,
@@ -70,52 +68,93 @@ const baseSchema = z.object({
  * a project, which is how the README's Deploy button provisions Redis without
  * asking for a value.
  */
-const upstashSchema = baseSchema.extend({
+const upstashSchema = z.object({
   UPSTASH_REDIS_REST_URL: z.url(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
 });
 
-const marketplaceSchema = baseSchema.extend({
-  KV_REST_API_URL: z.url(),
-  KV_REST_API_TOKEN: z.string().min(1),
-});
-
-export type Env = z.infer<typeof upstashSchema>;
+const marketplaceUpstashSchema = z
+  .object({
+    KV_REST_API_URL: z.url(),
+    KV_REST_API_TOKEN: z.string().min(1),
+  })
+  .transform((kv) => ({
+    UPSTASH_REDIS_REST_URL: kv.KV_REST_API_URL,
+    UPSTASH_REDIS_REST_TOKEN: kv.KV_REST_API_TOKEN,
+  }));
 
 /**
- * Whether to hold the environment to the Marketplace's `KV_` pair: only when
- * neither `UPSTASH_` name is set and at least one `KV_` name is. A pair is
- * then validated whole, so a half-set one fails naming the missing half
- * instead of letting the client pair a URL with another database's token.
- * Empty counts as unset, as it does for the client's own `||` fallback.
+ * PostHog's project token and host, under either of two pairs of names.
+ * Nothing but this module reads them: the log exporter and the LLM analytics
+ * processor both take the values `parseEnv` returns.
+ *
+ * The `NEXT_PUBLIC_` pair is what the PostHog integration on the Vercel
+ * Marketplace sets on a project that adds it. The README's Deploy button does
+ * not provision PostHog, since whether a button can provision that kind of
+ * product is unconfirmed. The prefix is only part of the name here, since
+ * adam is not a Next.js app. That pair has no default host: the integration
+ * always sets one, for the region its token belongs to, and nothing sent to
+ * the other region's host reaches the project.
  */
-function usesMarketplaceNames(source: NodeJS.ProcessEnv): boolean {
-  if (source.UPSTASH_REDIS_REST_URL || source.UPSTASH_REDIS_REST_TOKEN) {
-    return false;
-  }
-  return Boolean(source.KV_REST_API_URL || source.KV_REST_API_TOKEN);
-}
+const posthogSchema = z.object({
+  POSTHOG_HOST: z.url().default("https://us.i.posthog.com"),
+  POSTHOG_PROJECT_TOKEN: z.string().min(1),
+});
 
-function invalid(error: z.ZodError): Error {
-  return new Error(`Invalid environment:\n${z.prettifyError(error)}`);
+const marketplacePosthogSchema = z
+  .object({
+    NEXT_PUBLIC_POSTHOG_HOST: z.url(),
+    NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().min(1),
+  })
+  .transform((names) => ({
+    POSTHOG_HOST: names.NEXT_PUBLIC_POSTHOG_HOST,
+    POSTHOG_PROJECT_TOKEN: names.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
+  }));
+
+export type Env = z.infer<typeof baseSchema> &
+  z.infer<typeof upstashSchema> &
+  z.infer<typeof posthogSchema>;
+
+/**
+ * Whether to hold a pair to its Marketplace names: only when neither of its
+ * own names is set and at least one Marketplace name is. A pair is then
+ * validated whole, so a half-set one fails naming the missing half instead
+ * of pairing a URL with another database's token, or a token with another
+ * region's host. Empty counts as unset, as it does for the Upstash client's
+ * own `||` fallback.
+ */
+function usesMarketplaceNames(
+  source: NodeJS.ProcessEnv,
+  own: readonly string[],
+  marketplace: readonly string[],
+): boolean {
+  if (own.some((name) => source[name])) return false;
+  return marketplace.some((name) => source[name]);
 }
 
 /**
  * Validates the environment. The Redis credentials come back under the
- * `UPSTASH_` names whichever pair supplied them.
+ * `UPSTASH_` names and the PostHog values under the `POSTHOG_` names,
+ * whichever pair supplied them.
  */
 export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  if (usesMarketplaceNames(source)) {
-    const result = marketplaceSchema.safeParse(source);
-    if (!result.success) throw invalid(result.error);
-    const { KV_REST_API_URL, KV_REST_API_TOKEN, ...rest } = result.data;
-    return {
-      ...rest,
-      UPSTASH_REDIS_REST_URL: KV_REST_API_URL,
-      UPSTASH_REDIS_REST_TOKEN: KV_REST_API_TOKEN,
-    };
+  const upstash = usesMarketplaceNames(
+    source,
+    ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"],
+    ["KV_REST_API_URL", "KV_REST_API_TOKEN"],
+  )
+    ? marketplaceUpstashSchema
+    : upstashSchema;
+  const posthog = usesMarketplaceNames(
+    source,
+    ["POSTHOG_HOST", "POSTHOG_PROJECT_TOKEN"],
+    ["NEXT_PUBLIC_POSTHOG_HOST", "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN"],
+  )
+    ? marketplacePosthogSchema
+    : posthogSchema;
+  const result = baseSchema.and(upstash).and(posthog).safeParse(source);
+  if (!result.success) {
+    throw new Error(`Invalid environment:\n${z.prettifyError(result.error)}`);
   }
-  const result = upstashSchema.safeParse(source);
-  if (!result.success) throw invalid(result.error);
   return result.data;
 }
