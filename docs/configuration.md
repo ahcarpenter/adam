@@ -14,7 +14,7 @@ Copy `env.example` to `.env.local` and fill in:
 | `LOG_LEVEL`                                           | winston level, closed set (defaults to `info`)                  |
 | `OTEL_SERVICE_NAME`                                   | `service.name` on logs and metrics (defaults to the agent name) |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`                         | OTLP collector: metrics, and all spans                          |
-| `ALLOW_ANONYMOUS_ACCESS`                              | `true` opens the agent to anyone (defaults to `false`)          |
+| `ALLOW_ANONYMOUS_ACCESS`                              | `true` opens a chat-only agent to anyone (defaults to `false`)  |
 
 Startup fails fast on an invalid environment in every mode, local dev
 included. `AI_GATEWAY_MODEL`, `POSTHOG_HOST`, `LOG_LEVEL`, `OTEL_SERVICE_NAME`,
@@ -88,7 +88,8 @@ through the eve terminal client. Every other caller gets a `401` with the code
 keeps that until it replaces the placeholder with its own auth provider.
 
 `ALLOW_ANONYMOUS_ACCESS=true` replaces the placeholder with eve's `none()`, which
-accepts every caller without a credential. It exists for a public demo deployment.
+accepts every caller without a credential, and removes eve's default tools from the
+agent. It exists for a public chat demo deployment.
 Set it on the deployment, not in the repository, and leave it out of the Deploy
 button: a fork should have to choose it.
 
@@ -100,13 +101,24 @@ Before turning it on:
   the project before the first public request, and do not turn this on without one.
   The rate limit below slows one address down; it does not cap what the deployment
   spends.
-- **The budget covers model calls, not tools.** The agent keeps eve's default tools,
-  among them a shell and file access in its sandbox, web fetch, and web search. An
-  anonymous visitor can have the model use every one, and sandbox compute is billed
-  outside the gateway budget. Remove what the demo does not need, which the
-  `defaultTools` option in `agent/agent.ts` does for the optional ones, and consider
-  a sandbox network policy tighter than allow-all; see eve's
-  [security model](https://eve.dev/docs/concepts/security-model).
+- **Turning it on turns eve's default tools off, for everyone.** An anonymous
+  visitor must not reach the sandbox shell (`bash`), sandbox files (`read_file`,
+  `write_file`), `web_fetch`, `web_search`, or the sub-agent (`agent`), so
+  `agent/agent.ts` sets `defaultTools: false` whenever this setting is `true`. That
+  also drops `task_cancel` and `load_skill`, which only serve those. eve 0.68 fixes
+  the tool set when it compiles the agent: web search and the sub-agent cannot be
+  offered to one caller and withheld from another, so the restriction covers the
+  whole deployment, including the callers `vercelOidc()` and `localDev()` identify.
+  What remains is chat plus the AgentKit memory and chat history, which are not
+  default tools. To give signed-in callers the default tools back, run a deployment
+  with this setting off. With it off, nothing changes: the agent has every default
+  tool, as before.
+- **Set it for the build as well as the running process.** The auth list is read
+  when the agent starts, the tool set when `eve build` or `eve dev` compiles it. On
+  Vercel both read the same project variable, and changing it takes a redeploy. If
+  you build and start in separate steps elsewhere, give both the same value: an
+  agent built with `false` and started with `true` would admit anonymous callers
+  with the default tools still compiled in.
 - **The rate limit is 20 messages a minute per address.** The limiter is the first
   entry in the auth list, so it applies to anonymous callers before `none()` accepts
   them, and the 21st message inside a minute gets a `403`. It counts `POST`s, so one
@@ -135,9 +147,10 @@ A visitor connects with eve's terminal client, with nothing to sign in to:
 npx eve remote connect --url https://your-deployment.vercel.app
 ```
 
-The setting only decides the last entry of the auth list. `vercelOidc()` and
-`localDev()` still run ahead of it, so the callers they recognize are identified as
-before.
+The setting decides two things: the last entry of the auth list, and whether the
+agent has eve's default tools. `vercelOidc()` and `localDev()` still run ahead of
+that last entry, so the callers they recognize are identified as before, with the
+same reduced tool set as everyone else.
 
 ## One-time setup (repo owner)
 

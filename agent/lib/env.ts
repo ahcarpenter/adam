@@ -50,7 +50,8 @@ const envSchema = z.object({
   /**
    * `true` opens the agent to callers who present no credential:
    * agent/channels/eve.ts then ends its auth list with eve's none() instead
-   * of the placeholder that rejects production traffic. Off unless set. The
+   * of the placeholder that rejects production traffic, and agent/agent.ts
+   * builds the agent without eve's default tools. Off unless set. The
    * set is closed, and parsed to a real boolean, because a loose read is
    * wrong in both directions: `ture` would leave a demo closed without a
    * word, and the string `false` is truthy.

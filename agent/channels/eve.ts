@@ -16,7 +16,8 @@ const env = parseEnv();
 // it answers eve_production_auth_not_configured until you replace it with
 // your app's auth provider, like Auth.js or Clerk.
 // ALLOW_ANONYMOUS_ACCESS=true swaps it for none() instead, for a public
-// demo: every caller is accepted as the same anonymous principal. Read
+// demo: every caller is accepted as the same anonymous principal, and
+// agent/agent.ts builds the agent without eve's default tools. Read
 // "Anonymous access" in docs/configuration.md before turning that on.
 const lastResort = env.ALLOW_ANONYMOUS_ACCESS ? none() : placeholderAuth();
 
