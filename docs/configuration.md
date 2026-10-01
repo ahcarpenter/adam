@@ -304,19 +304,21 @@ offer the device grant to Sign in with Vercel apps, and that decides the costs:
   client takes a header, so it is visible in that machine's process list for as long as
   the client runs.
 - **The sign-in lasts as long as the ID token.** eve's client cannot refresh it. The
-  command prints when it expires; after that the agent answers `401` with the code
-  `sign_in_not_accepted`, and you run the command again.
+  command prints when it expires, which was about one hour, as observed in a real
+  sign-in on 2026-10-01. Vercel sets that lifetime and may change it. After it expires
+  the agent answers `401` with the code `sign_in_not_accepted`, and you run the command
+  again.
 
 Any other client signs in the same way, by sending the ID token as
 `Authorization: Bearer <token>`. `Client` from `eve/client` takes a function for
 `auth.bearer`, which a long-lived integration can use to supply a fresh token on each
 request.
 
-Three things are not verified here, because they need a person to sign in to Vercel in
-a browser: that the consent page accepts the callback address above and redirects to
-it, that eve accepts the ID token a real sign-in returns, and how long that token
-lasts. Everything else is tested against a local stand-in for Vercel: the token checks
-in `agent/lib/vercel-sign-in.test.ts`, the four rows of the table above in
+Sign-in was verified with a real sign-in to a deployed adam on 2026-10-01: Vercel's
+consent page accepted the callback address above and redirected to it, eve accepted
+the ID token that sign-in returned, and the sign-in lasted about one hour. The
+automated tests run against a local stand-in for Vercel: the token checks in
+`agent/lib/vercel-sign-in.test.ts`, the four rows of the table above in
 `agent/channels/eve.test.ts`, and the helper's whole flow in `scripts/sign-in.test.ts`.
 
 ## Anonymous access
