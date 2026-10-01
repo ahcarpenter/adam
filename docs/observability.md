@@ -40,9 +40,10 @@ so no single startup call reaches them all).
   `details` payload, which is shaped by whatever failed and can carry model
   input — PostHog Logs is therefore a content store, on the same footing as
   the traces the trace policy already sends. Every handler runs inside
-  `neverThrow`: eve escalates a thrown hook to `turn.failed`, and one on the
-  failure cascade to `session.failed`, so instrumentation must never be able
-  to end the session it is describing.
+  `neverThrow`. Since eve 0.68 a thrown hook no longer fails the turn or the
+  session: eve logs it, runs the remaining subscribers and continues. The
+  wrapper is therefore a precaution, so instrumentation cannot end the
+  session it is describing whatever the runtime does with a throw.
 - **Metrics** — `ensureMetrics()` registers a meter provider only when
   `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Neither PostHog nor Braintrust
   ingests OTLP metrics, so there is no default destination and the

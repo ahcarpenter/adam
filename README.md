@@ -96,8 +96,9 @@ pnpm dev            # TUI at http://127.0.0.1:2000
 
 - **Fails fast, everywhere.** An incomplete environment stops the process at module
   load — in local dev too, not only in production.
-- **Instrumentation cannot take down the agent.** Every hook runs inside `neverThrow`,
-  because eve escalates a thrown hook to a failed turn.
+- **Instrumentation cannot take down the agent.** Every hook runs inside `neverThrow`.
+  eve 0.68 already logs a thrown hook and carries on with the turn, so the wrapper is
+  a precaution there.
 - **Signals earn their place.** Each metric and log line maps to a question on-call
   actually has to answer; cardinality stays in logs and traces, not in metric labels.
 - **CI builds, not just typechecks.** `tsc` does not run eve's compiler, so CI runs
