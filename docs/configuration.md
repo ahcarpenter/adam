@@ -278,6 +278,12 @@ eve's terminal client has no sign-in of its own: it can only send a header it is
 pnpm connect https://your-deployment.vercel.app
 ```
 
+The address must be `https`. The token is a bearer credential, and over plain `http` it
+would cross the network unencrypted, so the command refuses any other `http` address
+before it starts the sign-in or opens the browser, and says to use the `https` one.
+Plain `http` is accepted only for an agent running on the same machine, at `localhost`,
+`127.0.0.1` or `[::1]`, which is what local testing needs.
+
 It needs the app's client ID, from `--client-id cl_...` or from `VERCEL_APP_CLIENT_ID`
 in the environment or in `.env.local`. It reads that one value from `.env.local` and
 nothing else. The client ID is not a secret, so publish it beside the deployment's

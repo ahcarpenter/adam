@@ -31,7 +31,9 @@ const USAGE = `Usage: pnpm connect <url> [--client-id <id>]
 Signs you in with Vercel in your browser, then opens the eve terminal client
 on the agent at <url> as you.
 
-  <url>               The deployed agent, for example https://adam.example
+  <url>               The deployed agent, for example https://adam.example.
+                      Plain http is accepted only for an agent on this
+                      machine: localhost, 127.0.0.1 or [::1].
   --client-id <id>    Client ID of the agent's Sign in with Vercel app.
                       Defaults to VERCEL_APP_CLIENT_ID, which is also read
                       from .env.local.`;
@@ -52,6 +54,9 @@ export interface Dependencies {
 /** A failure the person can act on: printed as is, without a stack. */
 class SignInError extends Error {}
 
+/** The hosts plain http is accepted for, as `URL` spells their hostname. */
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
 const base64url = (bytes: Buffer) => bytes.toString("base64url");
 
 function parseArguments(args: readonly string[], env: Dependencies["env"]) {
@@ -71,6 +76,12 @@ function parseArguments(args: readonly string[], env: Dependencies["env"]) {
   if (url === undefined) throw new SignInError(USAGE);
   if (!URL.canParse(url) || !/^https?:$/.test(new URL(url).protocol)) {
     throw new SignInError(`Not an http or https URL: ${url}\n\n${USAGE}`);
+  }
+  const { protocol, hostname } = new URL(url);
+  if (protocol === "http:" && !LOOPBACK_HOSTS.has(hostname)) {
+    throw new SignInError(
+      `Refusing to sign in to ${url}: over plain http the sign-in token would cross the network unencrypted, where anyone on the path could read it and use the agent as you. Use the agent's https address. Plain http is accepted only for an agent on this machine: localhost, 127.0.0.1 or [::1].`,
+    );
   }
   if (!clientId) {
     throw new SignInError(

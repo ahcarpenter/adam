@@ -155,6 +155,24 @@ describe("pnpm connect", () => {
     ]);
   });
 
+  it.each([
+    "https://adam.example",
+    "https://192.168.1.20:3000",
+    "http://localhost:3000",
+    "http://LOCALHOST:3000",
+    "http://127.0.0.1:3000",
+    "http://[::1]:3000",
+    "http://localhost",
+  ])(
+    "accepts %s: https anywhere, plain http on this machine only",
+    async (url) => {
+      await expect(signInWith(url, "--client-id", clientId)).resolves.toBe(0);
+
+      expect(sandbox.authorized).toHaveLength(1);
+      expect(sandbox.connected).toEqual([[url, expect.any(String)]]);
+    },
+  );
+
   it("returns the exit code of eve's client", async () => {
     sandbox.deps.connect = async () => 7;
 
@@ -281,6 +299,36 @@ describe("pnpm connect", () => {
           `Not an http or https URL: ${url}`,
         );
         expect(sandbox.authorized).toEqual([]);
+      },
+    );
+
+    // The ID token is a bearer credential: over plain http it would cross
+    // the network in clear text.
+    it.each([
+      "http://adam.example",
+      "http://adam.example:8080/path",
+      "HTTP://adam.example",
+      "http://192.168.1.20:3000",
+      "http://127.0.0.2:3000",
+      "http://localhost.adam.example",
+      "http://127.0.0.1.adam.example",
+      "http://localhost@adam.example",
+      "http://[::2]:3000",
+    ])(
+      "given %s, plain http to another machine, saying why and what to use",
+      async (url) => {
+        await expect(signInWith(url, "--client-id", clientId)).resolves.toBe(1);
+
+        const printed = sandbox.log.join("\n");
+        expect(printed).toContain(`Refusing to sign in to ${url}`);
+        expect(printed).toContain("unencrypted");
+        expect(printed).toContain("https");
+        expect(printed).toContain("localhost, 127.0.0.1 or [::1]");
+        expect(sandbox.authorized).toEqual([]);
+        expect(sandbox.connected).toEqual([]);
+        await expect(
+          fetch(`http://127.0.0.1:${sandbox.deps.port}/callback`),
+        ).rejects.toThrow();
       },
     );
 
