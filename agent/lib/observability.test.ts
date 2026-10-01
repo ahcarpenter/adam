@@ -283,9 +283,9 @@ describe("observability handlers", () => {
     });
   });
 
-  it("contains a telemetry failure instead of failing the turn", async () => {
-    // eve turns a thrown handler into turn.failed, and one on the failure
-    // cascade into session.failed.
+  it("contains a telemetry failure inside the handler", async () => {
+    // Since eve 0.68 a thrown hook is logged, the remaining subscribers run
+    // and the turn and session continue, so neverThrow is a precaution here.
     const { onTurnFailed, recordTurn, diag } = await load();
     const diagError = vi
       .spyOn(diag, "error")

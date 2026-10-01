@@ -6,10 +6,10 @@ import { recordToolCall, recordTurn, type TurnOutcome } from "./metrics";
 // Handlers for the runtime stream events behind agent/hooks/observability.ts,
 // kept out of the hook file so they are unit-testable.
 //
-// Every handler body runs inside neverThrow: eve turns a thrown hook into
-// `turn.failed`, and one subscribed to a failure-cascade event into
-// `session.failed`, so an unguarded logging call could end the session it was
-// only meant to describe.
+// Every handler body runs inside neverThrow. Since eve 0.68 a thrown hook no
+// longer fails the turn or the session: eve logs it, runs the remaining
+// subscribers and continues. The wrapper is now a precaution, so a logging
+// call cannot end the session it was only meant to describe.
 //
 // Failure `details` is logged. It is shaped by whatever failed and can carry
 // model input or tool payloads, which makes PostHog Logs another store
