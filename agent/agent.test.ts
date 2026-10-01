@@ -70,7 +70,12 @@ describe("agent tool set", () => {
       expect(tools.get("true")).not.toContain(tool);
     });
 
-    it("keeps every tool that is not an eve default, memory included", () => {
+    // Only eve's defaults go. Everything the AgentKit extension contributes
+    // stays on purpose: memory, chat history, and document search (search,
+    // search_aggregate, search_count), which a retrieval demo needs. The
+    // history and search tools resolve per session, so `eve info` lists the
+    // memory tools only; removing a default must not take any of the rest.
+    it("keeps every tool that is not an eve default, document search included on purpose", () => {
       const open = tools.get("true");
 
       expect(open).toEqual(

@@ -105,14 +105,21 @@ Before turning it on:
   visitor must not reach the sandbox shell (`bash`), sandbox files (`read_file`,
   `write_file`), `web_fetch`, `web_search`, or the sub-agent (`agent`), so
   `agent/agent.ts` sets `defaultTools: false` whenever this setting is `true`. That
-  also drops `task_cancel` and `load_skill`, which only serve those. eve 0.68 fixes
-  the tool set when it compiles the agent: web search and the sub-agent cannot be
-  offered to one caller and withheld from another, so the restriction covers the
-  whole deployment, including the callers `vercelOidc()` and `localDev()` identify.
-  What remains is chat plus the AgentKit memory and chat history, which are not
-  default tools. To give signed-in callers the default tools back, run a deployment
-  with this setting off. With it off, nothing changes: the agent has every default
-  tool, as before.
+  also drops `task_cancel` and `load_skill`, which only serve those. This is one
+  deployment-wide switch on purpose, so the restriction covers every caller,
+  including the ones `vercelOidc()` and `localDev()` identify. eve 0.68 could decide
+  the shell, file and web-fetch tools per caller through dynamic tool resolvers, but
+  web search and the sub-agent tool are fixed when the agent is built, and a single
+  switch is the simpler and safer form. To give signed-in callers the default tools
+  back, run a deployment with this setting off. With it off, nothing changes: the
+  agent has every default tool, as before.
+- **Document search stays, and its index is shared.** What remains is chat plus
+  what the AgentKit extension contributes, none of it a default tool: memory, chat
+  history, and the document search tools `search`, `search_aggregate` and
+  `search_count`. Memory and chat history are kept per visitor, as described below.
+  The search index is not: it is the deployment's one shared index, so with this
+  setting on every document in it is readable by anyone. Put only public material
+  in it.
 - **Set it for the build as well as the running process.** The auth list is read
   when the agent starts, the tool set when `eve build` or `eve dev` compiles it. On
   Vercel both read the same project variable, and changing it takes a redeploy. If
@@ -131,6 +138,17 @@ Before turning it on:
   saved facts are never recalled for another. The cost is that a visitor's memory
   does not follow them into their next session. Callers with an identity are still
   keyed by principal id.
+- **Anonymous memory and chat history expire after 24 hours.** At the end of every
+  turn of an anonymous session, `agent/hooks/anonymous-expiry.ts` sets a 24-hour
+  Redis expiry on that session's chat-history key and on each of its memory keys, so
+  they expire 24 hours after the session's last turn. Signed-in callers' data is not
+  expired by this, nor any other principal's, and the extension's own deployment-wide
+  chat-history `ttlSeconds` stays off. A memory saved in a turn that never finishes
+  keeps no expiry until the session's next turn. The memory keys are found with a
+  `SCAN` under the session's own key prefix, which costs more as the database grows.
+  Two things are not verified here, because they need a live Upstash database: how
+  Upstash treats an existing expiry when a document is rewritten, and whether its
+  search index drops expired memory documents.
 - **The agent describes itself to anyone.** `GET /eve/v1/info` sits behind the same
   auth list, so an anonymous caller can read the agent's model, tools, and source
   file paths.

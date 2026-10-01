@@ -7,6 +7,7 @@ import {
   it,
   vi,
 } from "vitest";
+import { expireAnonymousSession } from "#lib/anonymous-expiry";
 import { validEnv } from "#lib/env.fixtures";
 
 // These tests run the extension's own tools over this repository's mount and
@@ -33,12 +34,22 @@ let tools: {
 /** Commands sent to the stubbed Upstash REST endpoint since the last test. */
 const commands: string[][] = [];
 
+/** The keys the stubbed database holds, for the one command that lists keys. */
+let stored: string[] = [];
+
+const base64 = (value: string) => Buffer.from(value).toString("base64");
+
 beforeAll(async () => {
   for (const [key, value] of Object.entries(validEnv)) vi.stubEnv(key, value);
   // Answers as an empty database: no document at any key, no search hits.
   vi.stubGlobal("fetch", async (_url: unknown, init: { body: string }) => {
     const answer = (command: string[]) => {
       commands.push(command);
+      if (String(command[0]).toUpperCase() === "SCAN") {
+        const prefix = String(command[3]).replace(/\*$/, "");
+        const found = stored.filter((key) => key.startsWith(prefix));
+        return { result: [base64("0"), found.map(base64)] };
+      }
       return { result: command[0] === "SEARCH.QUERY" ? [] : null };
     };
     const body = JSON.parse(init.body) as string[] | string[][];
@@ -57,6 +68,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   commands.length = 0;
+  stored = [];
 });
 
 afterAll(() => {
@@ -168,5 +180,38 @@ describe("agentkit extension user keys", () => {
         chat: new Set([key]),
       });
     }
+  });
+
+  // agent/lib/anonymous-expiry.ts expires an anonymous session's data by
+  // key, and the key layout is this extension's, not adam's. If a new
+  // version writes anywhere else, the expiry would silently stop reaching
+  // it, so this runs the extension and the expiry against each other. The
+  // chat key is taken from the read: the extension builds a chat's key in
+  // one place for reads and writes, and its write runs in a hook the
+  // package does not export.
+  it("keeps an anonymous session's data where adam's 24-hour expiry reaches it", async () => {
+    const ctx = session("visitor-1", anonymous);
+    const sent = await visit(ctx);
+    stored = [
+      ...new Set(
+        sent
+          .flat()
+          .map(String)
+          .filter((arg) => /^agentkit:(memory|chat):/.test(arg)),
+      ),
+    ];
+    expect(stored).toEqual([
+      expect.stringMatching(/^agentkit:memory:/),
+      expect.stringMatching(/^agentkit:chat:/),
+    ]);
+
+    const from = commands.length;
+    await expireAnonymousSession(ctx as never);
+
+    const expired = commands
+      .slice(from)
+      .filter(([name]) => String(name).toUpperCase() === "EXPIRE");
+    expect(expired.map(([, key]) => key).sort()).toEqual([...stored].sort());
+    for (const [, , seconds] of expired) expect(seconds).toBe(86_400);
   });
 });
