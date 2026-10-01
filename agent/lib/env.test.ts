@@ -10,6 +10,7 @@ describe("parseEnv", () => {
   it("parses a valid environment, stripping unknown keys", () => {
     expect(parseEnv({ ...validEnv, UNRELATED_VAR: "ignored" })).toEqual({
       ...validEnv,
+      AI_GATEWAY_MODEL: "openai/gpt-5",
       POSTHOG_HOST: "https://us.i.posthog.com",
       LOG_LEVEL: "info",
       OTEL_SERVICE_NAME: "adam",
@@ -37,8 +38,28 @@ describe("parseEnv", () => {
   it("throws a readable error listing missing variables", () => {
     expect(() => parseEnv({})).toThrow(/Invalid environment/);
     expect(() => parseEnv({})).toThrow(/UPSTASH_REDIS_REST_URL/);
-    expect(() => parseEnv({})).toThrow(/OPENAI_API_KEY/);
-    expect(() => parseEnv({})).toThrow(/OPENAI_MODEL/);
+    expect(() => parseEnv({})).toThrow(/UPSTASH_REDIS_REST_TOKEN/);
+    expect(() => parseEnv({})).toThrow(/BRAINTRUST_API_KEY/);
+    expect(() => parseEnv({})).toThrow(/POSTHOG_PROJECT_TOKEN/);
+  });
+
+  // validEnv carries no model and no gateway credential: a Vercel deployment
+  // authenticates to the gateway with its OIDC token and sets neither.
+  it("defaults the model with no model variable or gateway credential", () => {
+    expect(parseEnv(validEnv).AI_GATEWAY_MODEL).toBe("openai/gpt-5");
+  });
+
+  it("keeps an explicit gateway model", () => {
+    expect(
+      parseEnv({ ...validEnv, AI_GATEWAY_MODEL: "anthropic/claude-sonnet-5" })
+        .AI_GATEWAY_MODEL,
+    ).toBe("anthropic/claude-sonnet-5");
+  });
+
+  it("rejects an empty gateway model", () => {
+    expect(() => parseEnv({ ...validEnv, AI_GATEWAY_MODEL: "" })).toThrow(
+      /AI_GATEWAY_MODEL/,
+    );
   });
 
   it("rejects malformed URLs", () => {

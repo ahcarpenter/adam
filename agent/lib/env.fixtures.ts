@@ -1,10 +1,8 @@
 /**
  * A complete environment accepted by parseEnv, for tests that need
- * valid credential-shaped values.
+ * valid credential-shaped values. Only the variables without a default.
  */
 export const validEnv = {
-  OPENAI_API_KEY: "sk-test",
-  OPENAI_MODEL: "gpt-5",
   UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
   UPSTASH_REDIS_REST_TOKEN: "token",
   BRAINTRUST_API_KEY: "key",
