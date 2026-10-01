@@ -66,6 +66,40 @@ not be able to start its sandbox.
 See [docs/configuration.md](docs/configuration.md) for the environment variables and
 [docs/observability.md](docs/observability.md) for how the telemetry is wired.
 
+### Vercel MCP server
+
+[`.mcp.json`](.mcp.json) registers Vercel's hosted
+[MCP server](https://vercel.com/docs/agent-resources/vercel-mcp), `vercel`, at
+Claude Code's project scope, so it is available to coding agents in this repository
+only, not across your other projects. Once you log in, an agent can use it to:
+
+- **Deploy:** create a preview or production deployment from a Git source or files
+  (`create_deployment`), or cancel one (`cancel_deployment`).
+- **Inspect deployments:** list and filter them by state, branch, or commit
+  (`list_deployments`, `get_deployment`), and read their build logs
+  (`list_deployment_events`).
+- **Check a deployment:** fetch pages from it, including protected previews
+  (`web_fetch_vercel_url`).
+- **Debug production:** read grouped runtime errors and filtered runtime logs
+  (`get_runtime_errors`, `get_runtime_logs`).
+- **Look things up:** find your teams and projects, and search Vercel's docs.
+
+It acts with your Vercel account's permissions. The
+[tools reference](https://vercel.com/docs/agent-resources/vercel-mcp/tools) lists
+everything else it exposes.
+
+- It points at the generic endpoint, `https://mcp.vercel.com`, because this is a
+  template: a team- and project-specific URL would tie every fork to one Vercel project.
+- It authenticates with OAuth, and nothing secret is committed. Log in once: start
+  `claude` in the repo, approve the `vercel` server if asked, run `/mcp`, select
+  `vercel`, choose **Authenticate**, and finish the Vercel sign-in in your browser,
+  granting access to the team that owns your project. `/mcp` then lists `vercel` as
+  connected.
+- For a URL scoped to your own team and project, run `vercel mcp --project` in a
+  checkout linked with `vercel link`. Keep that URL in your own Claude Code config, not
+  in `.mcp.json`: `claude mcp add --transport http --scope local vercel <url>` stores it
+  in `~/.claude.json` and takes precedence over the shared entry for this checkout.
+
 ### Testing expectations
 
 Coverage is gated at 95% for both the project and the patch. The unit-testable surface
