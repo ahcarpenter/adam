@@ -12,6 +12,7 @@
 </p>
 
 <p align="center">
+  <a href="#deploy-to-vercel">Deploy</a> ·
   <a href="#quick-start">Quick Start</a> ·
   <a href="docs/configuration.md">Configuration</a> ·
   <a href="docs/observability.md">Observability</a> ·
@@ -19,6 +20,15 @@
   <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="https://eve.dev/docs">eve docs</a>
 </p>
+
+## Deploy to Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam&project-name=adam&repository-name=adam&env=OPENAI_API_KEY%2COPENAI_MODEL%2CUPSTASH_REDIS_REST_URL%2CUPSTASH_REDIS_REST_TOKEN%2CBRAINTRUST_API_KEY%2CPOSTHOG_PROJECT_TOKEN&envDescription=OpenAI%20key%20and%20model%20ID%2C%20Upstash%20Redis%20REST%20URL%20and%20token%2C%20Braintrust%20API%20key%2C%20PostHog%20project%20token.%20The%20build%20fails%20until%20all%20six%20are%20set.&envLink=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam%2Fblob%2Fmain%2Fdocs%2Fconfiguration.md)
+
+The button clones the repository and asks for six values: `OPENAI_API_KEY`,
+`OPENAI_MODEL`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`,
+`BRAINTRUST_API_KEY`, and `POSTHOG_PROJECT_TOKEN`. The build fails until all six are
+set. See [Configuration](docs/configuration.md) for what each value is.
 
 ## Quick Start
 
