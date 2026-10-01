@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { createServer, type Server } from "node:http";
-import type { AddressInfo } from "node:net";
+import { type AddressInfo, connect, type Socket } from "node:net";
+import { setTimeout as delay } from "node:timers/promises";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type Dependencies, run, VERCEL_SIGN_IN } from "./sign-in";
 
@@ -32,6 +33,11 @@ async function freePort(): Promise<number> {
   return port;
 }
 
+interface TokenAnswer {
+  status: number;
+  body: unknown;
+}
+
 /** What the fake Vercel saw and what the helper did, for one test. */
 interface Sandbox {
   deps: Dependencies;
@@ -48,7 +54,7 @@ interface Sandbox {
   tokenAnswer: (
     form: URLSearchParams,
     nonce: string,
-  ) => { status: number; body: unknown };
+  ) => TokenAnswer | Promise<TokenAnswer>;
   /** Replaces what the browser does with the authorize URL. */
   browser: (authorize: URL) => Promise<void> | void;
   /** Settles when the browser has finished what it was doing. */
@@ -93,10 +99,10 @@ beforeEach(async () => {
     request.on("data", (chunk) => {
       body += chunk;
     });
-    request.on("end", () => {
+    request.on("end", async () => {
       const form = new URLSearchParams(body);
       made.tokenRequests.push(form);
-      const answer = made.tokenAnswer(form, nonce);
+      const answer = await made.tokenAnswer(form, nonce);
       response.writeHead(answer.status, { "content-type": "application/json" });
       response.end(
         typeof answer.body === "string"
@@ -539,6 +545,57 @@ describe("pnpm connect", () => {
       expect(sandbox.pages).toEqual([
         { status: 400, text: expect.stringContaining("Sign-in failed.") },
       ]);
+    });
+
+    describe("when the browser drops the callback connection meanwhile", () => {
+      /** The tab is closed while Vercel is still answering the exchange. */
+      function closeTheTabDuringTheExchange(answer: Sandbox["tokenAnswer"]) {
+        let tab: Socket;
+        sandbox.browser = (authorize) => {
+          const redirect = new URL(
+            `${authorize.searchParams.get("redirect_uri")}?code=granted-code&state=${authorize.searchParams.get("state")}`,
+          );
+          tab = connect(Number(redirect.port), redirect.hostname);
+          tab.write(
+            `GET ${redirect.pathname}${redirect.search} HTTP/1.1\r\nHost: ${redirect.host}\r\n\r\n`,
+          );
+        };
+        sandbox.tokenAnswer = async (form, nonce) => {
+          await new Promise<void>((closed) => {
+            tab.once("close", () => closed());
+            tab.destroy();
+          });
+          // Long enough for the helper's listener to see the tab go.
+          await delay(100);
+          return answer(form, nonce);
+        };
+      }
+
+      it("still connects on a successful exchange", async () => {
+        closeTheTabDuringTheExchange(sandbox.tokenAnswer);
+
+        await expect(
+          signInWith(agentUrl, "--client-id", clientId),
+        ).resolves.toBe(0);
+
+        expect(sandbox.connected).toHaveLength(1);
+      });
+
+      it("still prints the reason for a failed exchange", async () => {
+        closeTheTabDuringTheExchange(() => ({
+          status: 400,
+          body: { error_description: "Invalid authorization code." },
+        }));
+
+        await expect(
+          signInWith(agentUrl, "--client-id", clientId),
+        ).resolves.toBe(1);
+
+        expect(sandbox.log.join("\n")).toContain(
+          "Vercel refused the sign-in (400): Invalid authorization code.",
+        );
+        expect(sandbox.connected).toEqual([]);
+      });
     });
 
     it("stops when the ID token cannot be read", async () => {

@@ -122,6 +122,8 @@ async function listenForCallback(input: {
     const url = new URL(request.url ?? "/", `http://127.0.0.1:${input.port}`);
     const answer = (status: number, text: string) =>
       new Promise<void>((written) => {
+        if (response.destroyed) return written();
+        response.once("close", written);
         response.writeHead(status, {
           "content-type": "text/plain; charset=utf-8",
           connection: "close",
