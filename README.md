@@ -65,7 +65,7 @@ caller keeps the shell, file and web-fetch tools. See
 The button also shows a demo card for a live deployment of this repository at
 <https://adam-umber.vercel.app>, which has been opened that way. It has no chat page in
 the browser: the page at that address shows eve's status and the terminal connect
-command. Chat with it from eve's terminal client, with nothing to sign in to:
+command. Chat with it from eve's terminal client, without signing in:
 
 ```sh
 npx eve remote connect --url https://adam-umber.vercel.app
@@ -73,9 +73,12 @@ npx eve remote connect --url https://adam-umber.vercel.app
 
 - **Conversations are recorded.** Your messages and the model's replies are sent in
   full to Braintrust and PostHog, so do not type anything private.
-- **You can chat, and nothing else.** The agent remembers what you tell it within a
-  session and can search the deployment's shared document index. It has no shell, file
-  or web tools, and it takes 20 messages a minute from one address.
+- **Without signing in, you can chat, and nothing else.** The agent remembers what you
+  tell it within a session and can search the deployment's shared document index. It
+  has no shell, file or web tools for a visitor who does not sign in, and it takes 20
+  messages a minute from one address.
+- **A caller who signs in with Vercel gets more.** They get the sandbox shell, the file
+  tools and web fetch, with their own memory and chat history.
 - **It runs under a spend limit.** When the limit is used up, the demo can be
   unavailable.
 
