@@ -66,12 +66,47 @@ not be able to start its sandbox.
 See [docs/configuration.md](docs/configuration.md) for the environment variables and
 [docs/observability.md](docs/observability.md) for how the telemetry is wired.
 
-### Vercel MCP server
+### Agent tooling
 
-[`.mcp.json`](.mcp.json) registers Vercel's hosted
-[MCP server](https://vercel.com/docs/agent-resources/vercel-mcp), `vercel`, at
-Claude Code's project scope, so it is available to coding agents in this repository
-only, not across your other projects. Once you log in, an agent can use it to:
+The repository commits tooling for the coding agents that work on it, at Claude Code's
+project scope, so it applies in this repository only, not across your other projects.
+
+| What        | Where                                                                       | From                                                                      |
+| ----------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| MCP servers | [`.mcp.json`](.mcp.json)                                                    | Vercel, Braintrust, PostHog                                               |
+| Plugin      | [`.claude/settings.json`](.claude/settings.json)                            | [`vercel/vercel-plugin`](https://github.com/vercel/vercel-plugin)         |
+| Skills      | [`.claude/skills/`](.claude/skills), [`skills-lock.json`](skills-lock.json) | [`vercel-labs/agent-skills`](https://github.com/vercel-labs/agent-skills) |
+
+None of it ships in the deployed agent: eve loads skills from `agent/skills/` only, and
+nothing here is placed there.
+
+#### MCP servers
+
+`.mcp.json` registers the hosted MCP server of every provider that can sign in through
+the browser: `vercel`, `braintrust`, and `posthog`.
+
+- **Approval:** Claude Code asks you to approve each server the first time you start
+  `claude` in a checkout. Approvals are stored on your machine, not in the repository,
+  so a fork or a fresh clone is asked again for all three. Approve only the ones you
+  use; `claude mcp reset-project-choices` clears your answers.
+- **Sign-in:** every server authenticates with OAuth, and nothing secret is committed.
+  Sign in to each one separately: run `/mcp`, select the server, choose
+  **Authenticate**, and finish in your browser, or run `claude mcp login <name>` from
+  your shell. `/mcp` then lists it as connected, and it acts with the permissions of
+  the account you signed in with.
+- **No keys in `.mcp.json`:** a server that needs a key or token does not belong in a
+  committed file. That is why Upstash's MCP server is absent, although adam uses
+  Upstash: it authenticates with an API key. Add a server like that to your own config
+  with `claude mcp add --scope local`, which stores it in `~/.claude.json`.
+- **Generic endpoints:** each URL is the provider's generic one because this is a
+  template: a URL tied to one team, project, or region would tie every fork to it. Keep
+  a scoped URL in your own config the same way. A local entry with the same name takes
+  precedence over the shared one for that checkout.
+
+##### `vercel`
+
+Vercel's [MCP server](https://vercel.com/docs/agent-resources/vercel-mcp), at
+`https://mcp.vercel.com`. Once you log in, an agent can use it to:
 
 - **Deploy:** create a preview or production deployment from a Git source or files
   (`create_deployment`), or cancel one (`cancel_deployment`).
@@ -88,17 +123,99 @@ It acts with your Vercel account's permissions. The
 [tools reference](https://vercel.com/docs/agent-resources/vercel-mcp/tools) lists
 everything else it exposes.
 
-- It points at the generic endpoint, `https://mcp.vercel.com`, because this is a
-  template: a team- and project-specific URL would tie every fork to one Vercel project.
-- It authenticates with OAuth, and nothing secret is committed. Log in once: start
-  `claude` in the repo, approve the `vercel` server if asked, run `/mcp`, select
-  `vercel`, choose **Authenticate**, and finish the Vercel sign-in in your browser,
-  granting access to the team that owns your project. `/mcp` then lists `vercel` as
-  connected.
+- When you sign in, grant access to the team that owns your project.
 - For a URL scoped to your own team and project, run `vercel mcp --project` in a
   checkout linked with `vercel link`. Keep that URL in your own Claude Code config, not
   in `.mcp.json`: `claude mcp add --transport http --scope local vercel <url>` stores it
   in `~/.claude.json` and takes precedence over the shared entry for this checkout.
+
+##### `braintrust`
+
+Braintrust's [MCP server](https://www.braintrust.dev/docs/integrations/developer-tools/mcp),
+at `https://api.braintrust.dev/mcp`. It reads and writes the Braintrust organization
+you sign in to, which is where adam sends its AI traces: an agent can query logs and
+traces, write prompts and scorers, edit datasets, and run evals.
+
+- The committed URL is the US data plane. An EU organization uses
+  `https://api-eu.braintrust.dev/mcp`, and a self-hosted one the MCP URL shown under
+  **Settings > Data plane**. Add yours as a local entry named `braintrust`.
+- This sign-in is separate from `bt login`, which authenticates the Braintrust CLI.
+
+##### `posthog`
+
+PostHog's [MCP server](https://posthog.com/docs/model-context-protocol), at
+`https://mcp.posthog.com/mcp`. It reads and writes the PostHog project you sign in to,
+which is where adam sends its logs and LLM analytics: an agent can run queries, read
+error tracking, and manage insights and feature flags.
+
+- One endpoint serves both regions: the sign-in routes you to US or EU by account.
+- One connection is one account, with one active organization and project.
+- To stop an agent writing to your project, add a local entry named `posthog` with
+  `https://mcp.posthog.com/mcp?readonly=true`.
+
+#### Vercel plugin
+
+`.claude/settings.json` enables `vercel@claude-plugins-official`, which is
+[`vercel/vercel-plugin`](https://github.com/vercel/vercel-plugin) as published in
+Claude Code's official marketplace. It adds Vercel skills, subagents, and commands, and
+injects Vercel context at session start because it detects an eve project.
+
+- **Install it once:** a committed entry turns the plugin on but does not download it.
+  Run `claude plugin install vercel@claude-plugins-official --scope project` in the
+  repo. Until you do, the `/plugin` **Errors** tab reports it as enabled but not
+  installed. The command leaves `.claude/settings.json` unchanged.
+- **Telemetry is on by default:** the plugin reports its version, a random
+  installation id, the agent you run it in, and the names of its own skills that get
+  used. Set `VERCEL_PLUGIN_TELEMETRY=off` in the environment that launches your agent
+  to disable it. Its
+  [README](https://github.com/vercel/vercel-plugin#telemetry) lists every field.
+- **It carries the same `vercel` MCP server:** the plugin bundles an entry for
+  `https://mcp.vercel.com`. Claude Code connects to that endpoint once, using the
+  `.mcp.json` entry, which outranks a plugin's.
+- **Other agents:** the plugin also supports Cursor, Codex, and others through
+  `npx plugins add vercel/vercel-plugin`, which installs to your user profile, not to
+  the repository.
+
+#### Vercel agent skills
+
+`.claude/skills/` vendors three skills from
+[`vercel-labs/agent-skills`](https://github.com/vercel-labs/agent-skills). Claude Code
+loads them on demand, with nothing to install.
+
+| Skill                | Use it to                                                               |
+| -------------------- | ----------------------------------------------------------------------- |
+| `deploy-to-vercel`   | Deploy the project to Vercel                                            |
+| `vercel-optimize`    | Audit a deployed project's cost and performance from its Vercel metrics |
+| `writing-guidelines` | Review docs and prose against Vercel's writing handbook                 |
+
+- **Why only three:** the rest of that repository targets React, React Native, or web
+  UI, which a headless agent has none of, or, in the case of `vercel-cli-with-tokens`,
+  has an agent read a token out of `.env` files.
+- **`vercel-optimize` is limited here:** the skill treats frameworks other than
+  Next.js, SvelteKit, Nuxt, and Astro as unsupported. On this headless eve agent its
+  preflight stops and offers only a limited platform and scanner audit.
+- **Do not edit them:** they are copied from upstream as-is, which is why Biome and
+  Prettier skip `.claude/skills/`. [`skills-lock.json`](skills-lock.json) records each
+  skill's source and content hash.
+- **Refresh them by name, for a named agent:** run the command below and commit the
+  result together with the lock file.
+
+  ```sh
+  npx skills add vercel-labs/agent-skills \
+    --skill deploy-to-vercel vercel-optimize writing-guidelines \
+    --agent claude-code --yes
+  ```
+
+  `--skill '*'` would bring back every skill in that repository. This is an eve
+  project, so without `--agent` the installer targets eve and writes into
+  `agent/skills/`, which would ship the skills inside the deployed agent.
+  `npx skills update` does exactly that, because it takes no agent: do not use it here.
+
+- **Skills run with your agent's permissions:** read one before relying on it.
+  `deploy-to-vercel` can upload the project to Vercel, `vercel-optimize` runs its own
+  scripts, and `writing-guidelines` fetches its rules from GitHub each time it runs.
+- The `skills` installer sends anonymous usage telemetry unless `DISABLE_TELEMETRY=1`
+  or `DO_NOT_TRACK=1` is set.
 
 ### Testing expectations
 

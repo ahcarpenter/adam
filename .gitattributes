@@ -7,3 +7,7 @@ pnpm-lock.yaml linguist-generated=true -diff
 # Documentation, not code — do not let it dominate the language bar.
 docs/** linguist-documentation=true
 specs/** linguist-documentation=true
+
+# Vendored agent skills are upstream code, not this project's: keep their
+# scripts out of the language bar too.
+.claude/skills/** linguist-vendored=true
