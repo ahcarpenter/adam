@@ -27,13 +27,14 @@
 
 ## Deploy to Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam&project-name=adam&repository-name=adam&env=BRAINTRUST_API_KEY%2CPOSTHOG_PROJECT_TOKEN&envDescription=Braintrust%20API%20key%20and%20PostHog%20project%20token.%20The%20build%20fails%20until%20both%20are%20set.%20Upstash%20Redis%20is%20provisioned%20for%20you%2C%20and%20the%20model%20runs%20through%20Vercel%20AI%20Gateway%20and%20needs%20no%20key.&envLink=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam%2Fblob%2Fmain%2Fdocs%2Fconfiguration.md&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%2C%22protocol%22%3A%22storage%22%7D%5D)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam&project-name=adam&repository-name=adam&env=BRAINTRUST_API_KEY&envDescription=Braintrust%20API%20key.%20The%20build%20fails%20until%20it%20is%20set.%20Upstash%20Redis%20and%20PostHog%20are%20provisioned%20for%20you%2C%20and%20the%20model%20runs%20through%20Vercel%20AI%20Gateway%20and%20needs%20no%20key.&envLink=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam%2Fblob%2Fmain%2Fdocs%2Fconfiguration.md&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%2C%22protocol%22%3A%22storage%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22posthog%22%2C%22productSlug%22%3A%22posthog%22%2C%22protocol%22%3A%22experimentation%22%7D%5D)
 
-The button clones the repository and asks for two values: `BRAINTRUST_API_KEY` and
-`POSTHOG_PROJECT_TOKEN`. The build fails until both are set. Redis asks for nothing: the
-button creates an Upstash Redis store from the Vercel Marketplace, which sets
-`KV_REST_API_URL` and `KV_REST_API_TOKEN` on the project. The model asks for nothing
-either: it runs through the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway),
+The button clones the repository and asks for one value, `BRAINTRUST_API_KEY`. The
+build fails until it is set. Redis and PostHog ask for nothing: the button creates both
+from the Vercel Marketplace. The Upstash Redis store sets `KV_REST_API_URL` and
+`KV_REST_API_TOKEN` on the project, and the PostHog project sets
+`NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` and `NEXT_PUBLIC_POSTHOG_HOST`. The model asks for
+nothing either: it runs through the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway),
 which a Vercel deployment reaches with its own project credentials and bills to the
 team's AI Gateway credits. See [Configuration](docs/configuration.md) for what each
 value is.
@@ -58,7 +59,8 @@ cp env.example .env.local
 
 Every variable without a default must be filled: the Upstash Redis URL and token (under
 the `UPSTASH_REDIS_REST_` names or the Vercel Marketplace's `KV_REST_API_` names),
-`BRAINTRUST_API_KEY`, and `POSTHOG_PROJECT_TOKEN`. See
+`BRAINTRUST_API_KEY`, and `POSTHOG_PROJECT_TOKEN` (or the Vercel Marketplace's
+`NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` and `NEXT_PUBLIC_POSTHOG_HOST`). See
 [Configuration](docs/configuration.md) for the full table.
 
 The model runs through the Vercel AI Gateway, so a local run also needs a gateway

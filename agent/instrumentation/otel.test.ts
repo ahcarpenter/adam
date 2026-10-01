@@ -18,8 +18,12 @@ const recorded = vi.hoisted(() => {
     posthog: [] as ExportedSpan[],
     braintrust: [] as ExportedSpan[],
   };
-  const processorFor = (into: ExportedSpan[]) =>
+  const posthogOptions: unknown[] = [];
+  const processorFor = (into: ExportedSpan[], options?: unknown[]) =>
     class {
+      constructor(received?: unknown) {
+        options?.push(received);
+      }
       onStart() {}
       onEnd = record(into);
       async forceFlush() {}
@@ -27,7 +31,8 @@ const recorded = vi.hoisted(() => {
     };
   return {
     destinations,
-    PostHogSpanProcessor: processorFor(destinations.posthog),
+    posthogOptions,
+    PostHogSpanProcessor: processorFor(destinations.posthog, posthogOptions),
     BraintrustSpanProcessor: processorFor(destinations.braintrust),
     agentRunsRecorder: new (processorFor(destinations.agentRuns))(),
   };
@@ -153,6 +158,15 @@ function exportThrough(
 }
 
 describe("trace destinations", () => {
+  // parseEnv returns the token and host under the POSTHOG_ names whichever
+  // names the environment used, such as the ones PostHog's Vercel Marketplace
+  // integration sets, so a processor that read process.env would miss them.
+  it("PostHog takes its token and host from the validated environment", () => {
+    expect(recorded.posthogOptions).toEqual([
+      { projectToken: "test", host: "https://posthog.test" },
+    ]);
+  });
+
   it.each(audiences)(
     "Agent Runs keeps the span but drops content and user ids for %s conversations",
     (audience) => {
