@@ -94,7 +94,10 @@ function parseArguments(args: readonly string[], env: Dependencies["env"]) {
 /** Vercel's redirect, with the browser still waiting for its page. */
 interface Redirect {
   code: string;
-  /** Writes the page the browser shows, once the outcome is known. */
+  /**
+   * Writes the page the browser shows, once the outcome is known. Resolves
+   * when the page is written or the browser has gone away, whichever is first.
+   */
   answer: (status: number, text: string) => Promise<void>;
 }
 
@@ -122,6 +125,8 @@ async function listenForCallback(input: {
     const url = new URL(request.url ?? "/", `http://127.0.0.1:${input.port}`);
     const answer = (status: number, text: string) =>
       new Promise<void>((written) => {
+        // A browser that dropped the connection must not hold up the
+        // command: Node never runs the `end` callback on a closed socket.
         if (response.destroyed) return written();
         response.once("close", written);
         response.writeHead(status, {
