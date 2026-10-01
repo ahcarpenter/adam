@@ -27,7 +27,7 @@
 
 ## Deploy to Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam&project-name=adam&repository-name=adam&env=BRAINTRUST_API_KEY%2CPOSTHOG_PROJECT_TOKEN&envDescription=Braintrust%20API%20key%20and%20PostHog%20project%20token.%20The%20build%20fails%20until%20both%20are%20set.%20Upstash%20Redis%20is%20provisioned%20for%20you%2C%20and%20the%20model%20runs%20through%20Vercel%20AI%20Gateway%20and%20needs%20no%20key.&envLink=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam%2Fblob%2Fmain%2Fdocs%2Fconfiguration.md&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%2C%22protocol%22%3A%22storage%22%7D%5D&demo-title=adam%20live%20demo&demo-description=A%20public%20deployment%20of%20this%20starter.%20It%20has%20no%20web%20page%3A%20chat%20with%20it%20from%20eve%27s%20terminal%20client.%20Conversations%20are%20recorded.&demo-url=https%3A%2F%2Fadam-umber.vercel.app&demo-image=https%3A%2F%2Fraw.githubusercontent.com%2Fahcarpenter%2Fadam%2Fmain%2Fdocs%2Fassets%2Fthumbnail.png)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam&project-name=adam&repository-name=adam&env=BRAINTRUST_API_KEY%2CPOSTHOG_PROJECT_TOKEN&envDescription=Braintrust%20API%20key%20and%20PostHog%20project%20token.%20The%20build%20fails%20until%20both%20are%20set.%20Upstash%20Redis%20is%20provisioned%20for%20you%2C%20and%20the%20model%20runs%20through%20Vercel%20AI%20Gateway%20and%20needs%20no%20key.&envLink=https%3A%2F%2Fgithub.com%2Fahcarpenter%2Fadam%2Fblob%2Fmain%2Fdocs%2Fconfiguration.md&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%2C%22protocol%22%3A%22storage%22%7D%5D&demo-title=adam%20live%20demo&demo-description=A%20public%20deployment%20of%20this%20starter.%20No%20chat%20page%20in%20the%20browser%3A%20chat%20from%20eve%27s%20terminal%20client.%20Conversations%20are%20recorded.&demo-url=https%3A%2F%2Fadam-umber.vercel.app&demo-image=https%3A%2F%2Fraw.githubusercontent.com%2Fahcarpenter%2Fadam%2Fmain%2Fdocs%2Fassets%2Fthumbnail.png)
 
 The button clones the repository and asks for two values: `BRAINTRUST_API_KEY` and
 `POSTHOG_PROJECT_TOKEN`. The build fails until both are set. Redis asks for nothing: the
@@ -39,8 +39,9 @@ team's AI Gateway credits. See [Configuration](docs/configuration.md) for what e
 value is.
 
 The button also shows a demo card for a live deployment of this repository at
-<https://adam-umber.vercel.app>. It has no web page. Connect to it with eve's terminal
-client, with nothing to sign in to:
+<https://adam-umber.vercel.app>. It has no chat page in the browser: the page at that
+address shows eve's status and the terminal connect command. Chat with it from eve's
+terminal client, with nothing to sign in to:
 
 ```sh
 npx eve remote connect --url https://adam-umber.vercel.app
