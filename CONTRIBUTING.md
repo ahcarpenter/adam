@@ -191,6 +191,9 @@ loads them on demand, with nothing to install.
 - **Why only three:** the rest of that repository targets React, React Native, or web
   UI, which a headless agent has none of, or, in the case of `vercel-cli-with-tokens`,
   has an agent read a token out of `.env` files.
+- **`vercel-optimize` is limited here:** the skill treats frameworks other than
+  Next.js, SvelteKit, Nuxt, and Astro as unsupported. On this headless eve agent its
+  preflight stops and offers only a limited platform and scanner audit.
 - **Do not edit them:** they are copied from upstream as-is, which is why Biome and
   Prettier skip `.claude/skills/`. [`skills-lock.json`](skills-lock.json) records each
   skill's source and content hash.
