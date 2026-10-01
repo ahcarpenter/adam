@@ -6,6 +6,9 @@
   your domain documents; the index is created reactively on first use), and
   durable **chat history**. See the
   [extension configuration reference](https://upstash.com/docs/redis/sdks/agentkit/eve#extension-configuration-reference).
+  Memory and chat history are keyed by the caller's principal id, except for
+  anonymous callers, who all share one principal id and are keyed by session id
+  instead (`agent/lib/agentkit-user.ts`).
 - `agent/channels/eve.ts` — sliding-window rate limit (20 req/min per caller,
   403 over the limit) via `createRateLimitAuth` from `@upstash/agentkit-eve`,
   ahead of the real authenticators.

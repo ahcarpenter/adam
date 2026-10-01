@@ -42,8 +42,18 @@ There are no tagged releases yet. Fixes land on `main`.
 
 ## Security notes for anyone deploying this starter
 
-This repository is a template. Two of its defaults matter before you point it at real
-traffic:
+This repository is a template. Three things about it matter before you point it at
+real traffic:
+
+- **A deployment is closed until you open it.** `agent/channels/eve.ts` rejects every
+  production caller its auth list does not recognize, which leaves the project's own
+  Vercel deployments and team, until you replace eve's placeholder with an auth
+  provider. `ALLOW_ANONYMOUS_ACCESS=true` opens it to anyone instead, for a public
+  demo: each visitor can spend the model budget and use the agent's tools, its sandbox
+  shell included, limited only to 20 messages a minute per address, and everything
+  they send is exported as the next point describes. Do not set it without a spend
+  limit in front of the model. See
+  [Anonymous access](docs/configuration.md#anonymous-access).
 
 - **Telemetry exports message content.** The trace policy in
   `agent/instrumentation/otel.ts` sets `recordInputs` and `recordOutputs` to `true` for
