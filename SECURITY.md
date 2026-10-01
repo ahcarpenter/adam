@@ -47,10 +47,25 @@ real traffic:
 
 - **A deployment is closed until you open it.** `agent/channels/eve.ts` rejects every
   production caller its auth list does not recognize, which leaves the project's own
-  Vercel deployments and team, until you replace eve's placeholder with an auth
-  provider. `ALLOW_ANONYMOUS_ACCESS=true` opens it to anyone instead, for a public
-  demo, and in the same step removes eve's default tools from the agent for every
-  caller: no sandbox shell or files, no web fetch, no web search, no sub-agent. A
+  Vercel deployments and team, until you configure sign-in or open it.
+  `VERCEL_APP_CLIENT_ID` turns on Sign in with Vercel: a caller is accepted as a named
+  user only with an ID token that Vercel signed and issued to that one app, checked
+  against Vercel's published keys, and a token that fails the check is rejected, never
+  admitted as anonymous. The terminal helper is a public client with PKCE, so no client
+  secret exists to leak; it passes the token to eve's client as a command-line
+  argument, visible in that machine's process list while the client runs.
+  Signing in is access, not only an identity: whoever the app admits can run commands
+  in the sandbox, read and write files there, fetch web pages through the agent, and
+  spend the model budget, and an app admits any Vercel account unless you restrict it
+  to your team. On a deployment that is not open to anonymous callers they get web
+  search and the sub-agent as well. No setting keeps sign-in and withholds those tools.
+  `ALLOW_ANONYMOUS_ACCESS=true` opens the deployment to anyone, for a public
+  demo, and in the same step takes eve's default tools away from anonymous callers:
+  no sandbox shell or files, no web fetch, no web search, no sub-agent. A caller with
+  an identity, which includes anyone who signs in, keeps the shell, file and web-fetch
+  tools, decided turn by turn; web search and the sub-agent are off for every caller
+  on such a deployment. Deleting the four files in `agent/tools/` is what withholds
+  those tools from signed-in callers there. A
   visitor gets chat with memory and chat history kept per session and expired 24
   hours after the session's last turn, and the document search tools (`search`,
   `search_aggregate`, `search_count`). The search index is shared, not per visitor,
@@ -58,7 +73,9 @@ real traffic:
   visitor can spend the model budget limited only to 20 messages a minute per
   address, and everything they send is exported as the next point describes. The
   tools are removed when the agent is built, so the setting has to be present at
-  build time too. Do not set it without a spend limit in front of the model. See
+  build time too; an agent built with one value and started with the other answers
+  `500` to every request. Do not set it without a spend limit in front of the model.
+  See [Sign-in](docs/configuration.md#sign-in) and
   [Anonymous access](docs/configuration.md#anonymous-access).
 
 - **Telemetry exports message content.** The trace policy in
@@ -66,7 +83,9 @@ real traffic:
   every environment and audience, and `agent/channels/eve.ts` classifies every
   conversation as `public` so eve does not cap private and anonymous ones to metadata.
   Braintrust, PostHog, and the OTLP collector (when `OTEL_EXPORTER_OTLP_ENDPOINT` is set)
-  therefore receive full message history and model output. Failure logs additionally carry
+  therefore receive full message history and model output. That holds for a signed-in
+  user too, whose principal id, containing their Vercel user id, goes to Braintrust and
+  PostHog with the content. Failure logs additionally carry
   a `details` payload that can include model input. Treat all three as content stores, and
   turn these off before handling regulated data. Vercel Agent Runs receives operational
   metadata without message content or user identifiers:
