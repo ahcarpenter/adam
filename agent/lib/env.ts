@@ -45,6 +45,19 @@ const baseSchema = z.object({
    * collector or metrics backend. Absent, the instruments are no-ops.
    */
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
+  /**
+   * `true` opens the agent to callers who present no credential:
+   * agent/channels/eve.ts then ends its auth list with eve's none() instead
+   * of the placeholder that rejects production traffic, and agent/agent.ts
+   * builds the agent without eve's default tools. Off unless set. The
+   * set is closed, and parsed to a real boolean, because a loose read is
+   * wrong in both directions: `ture` would leave a demo closed without a
+   * word, and the string `false` is truthy.
+   */
+  ALLOW_ANONYMOUS_ACCESS: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
 });
 
 /**

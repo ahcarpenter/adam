@@ -26,6 +26,7 @@ describe("parseEnv", () => {
       POSTHOG_HOST: "https://us.i.posthog.com",
       LOG_LEVEL: "info",
       OTEL_SERVICE_NAME: "adam",
+      ALLOW_ANONYMOUS_ACCESS: false,
     });
   });
 
@@ -117,6 +118,31 @@ describe("parseEnv", () => {
       parseEnv({ ...validEnv, OTEL_EXPORTER_OTLP_ENDPOINT: "collector" }),
     ).toThrow(/OTEL_EXPORTER_OTLP_ENDPOINT/);
   });
+
+  it("keeps anonymous access off unless a deployment turns it on", () => {
+    expect(parseEnv(validEnv).ALLOW_ANONYMOUS_ACCESS).toBe(false);
+  });
+
+  it.each([
+    ["true", true],
+    ["false", false],
+  ])("parses ALLOW_ANONYMOUS_ACCESS=%s to the boolean %s", (value, parsed) => {
+    expect(
+      parseEnv({ ...validEnv, ALLOW_ANONYMOUS_ACCESS: value })
+        .ALLOW_ANONYMOUS_ACCESS,
+    ).toBe(parsed);
+  });
+
+  // A typo must fail startup, not decide access: read loosely, "ture" would
+  // leave a demo closed without a word, and "0" or "no" would open one.
+  it.each(["ture", "TRUE", "1", "yes", "on", "open", "0", "no", ""])(
+    "rejects ALLOW_ANONYMOUS_ACCESS=%j rather than guessing",
+    (value) => {
+      expect(() =>
+        parseEnv({ ...validEnv, ALLOW_ANONYMOUS_ACCESS: value }),
+      ).toThrow(/ALLOW_ANONYMOUS_ACCESS/);
+    },
+  );
 
   describe("Vercel Marketplace names for Upstash", () => {
     it("accepts the KV_ pair when the UPSTASH_ pair is absent", () => {
