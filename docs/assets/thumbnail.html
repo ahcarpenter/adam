@@ -1,0 +1,96 @@
+<!doctype html>
+<!--
+  Source for thumbnail.png, the 1600x900 card shown in the README and uploaded
+  to template galleries. Regenerate on macOS (the font stack resolves to the
+  system faces there) from the repository root:
+
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+      --headless --hide-scrollbars --force-device-scale-factor=1 \
+      --window-size=1600,900 --screenshot=docs/assets/thumbnail.png \
+      docs/assets/thumbnail.html
+    oxipng --opt max --strip all docs/assets/thumbnail.png
+
+  Text only, by design: no vendor logos or marks.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>eve Enterprise Starter</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html,
+      body {
+        width: 1600px;
+        height: 900px;
+        overflow: hidden;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 96px 112px;
+        background: #0a0a0a;
+        color: #ededed;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue",
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: geometricPrecision;
+      }
+      .repo,
+      .stack {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      .repo {
+        font-size: 36px;
+        line-height: 1;
+        color: #a1a1a1;
+      }
+      h1 {
+        font-size: 128px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.04em;
+        margin-left: -0.02em;
+      }
+      .pitch {
+        margin-top: 44px;
+        max-width: 1280px;
+        font-size: 50px;
+        font-weight: 400;
+        line-height: 1.28;
+        text-wrap: balance;
+        color: #a1a1a1;
+      }
+      .stack {
+        display: flex;
+        gap: 22px;
+        font-size: 36px;
+        line-height: 1;
+        color: #ededed;
+      }
+      .stack i {
+        font-style: normal;
+        color: #5c5c5c;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="repo">ahcarpenter/adam</p>
+    <main>
+      <h1>eve Enterprise Starter</h1>
+      <p class="pitch">
+        Memory and RAG, traces and logs, evals, and strict CI gates for eve
+        agents, already wired together.
+      </p>
+    </main>
+    <p class="stack">
+      <span>eve</span><i>/</i><span>Upstash</span><i>/</i
+      ><span>Braintrust</span><i>/</i><span>PostHog</span><i>/</i
+      ><span>OpenTelemetry</span>
+    </p>
+  </body>
+</html>
