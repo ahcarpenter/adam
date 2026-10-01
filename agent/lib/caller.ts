@@ -12,8 +12,10 @@ type SessionAuth = SessionContext["session"]["auth"];
  * enforce session ownership, so knowing a session id must not be enough to
  * act as its initiator.
  *
- * The key AgentKit stores memory and chat history under goes through this
- * rule (agent/lib/agentkit-user.ts).
+ * Everything adam decides per caller goes through this one rule: the key
+ * AgentKit stores memory and chat history under (agent/lib/agentkit-user.ts)
+ * and the tools a caller is offered on a deployment open to anonymous
+ * callers (agent/tools/).
  */
 export function identifiedCaller(
   auth: SessionAuth,

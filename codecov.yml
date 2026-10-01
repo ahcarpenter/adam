@@ -17,6 +17,7 @@ ignore:
   - "agent/channels/**"
   - "agent/extensions/**"
   - "agent/hooks/**"
+  - "agent/tools/**"
   - "scripts/connect.ts"
   - "**/*.fixtures.ts"
   - "**/*.test.ts"

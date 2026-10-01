@@ -18,6 +18,9 @@ export default defineConfig({
         "agent/channels/**",
         "agent/extensions/**",
         "agent/hooks/**",
+        // Compiled and run by eve: agent/caller-tools.test.ts drives them
+        // through a real eve server, in a process coverage cannot see.
+        "agent/tools/**",
         // The command's entry point: it opens a browser and starts eve's
         // client. Everything it calls is in scripts/sign-in.ts.
         "scripts/connect.ts",

@@ -47,9 +47,7 @@ can reach it. To let people in, register a
 [Sign in with Vercel](https://vercel.com/docs/sign-in-with-vercel) app on your team and
 set its client ID as `VERCEL_APP_CLIENT_ID`. Anyone who signs in is then a named user
 with their own memory and chat history, and `pnpm connect <url>` signs in from a
-terminal and opens eve's client. Unless `ALLOW_ANONYMOUS_ACCESS` is on, they also get
-eve's default tools, sandbox shell included, and an app allows any Vercel account by
-default, so restrict it to your team unless you mean that. It takes no vendor account, no secret, and no package;
+terminal and opens eve's client. It takes no vendor account, no secret, and no package;
 the cost is that only someone with a Vercel account can sign in. A signed-in user's
 conversations are traced in full, like every conversation. `ALLOW_ANONYMOUS_ACCESS=true`
 opens a deployment to anyone instead, or as well. See

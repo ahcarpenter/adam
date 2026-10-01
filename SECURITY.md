@@ -51,17 +51,14 @@ real traffic:
   `VERCEL_APP_CLIENT_ID` turns on Sign in with Vercel: a caller is accepted as a named
   user only with an ID token that Vercel signed and issued to that one app, checked
   against Vercel's published keys, and a token that fails the check is rejected, never
-  admitted as anonymous. Unless `ALLOW_ANONYMOUS_ACCESS` is on, a signed-in caller
-  gets eve's default tools (sandbox shell and files, web fetch, web search, sub-agent),
-  the shared search index and the model budget, and an app allows any Vercel account
-  by default: restrict it to team members unless that is intended, and put a spend
-  limit in front of the model. The terminal helper is a public client with PKCE, so no client
+  admitted as anonymous. The terminal helper is a public client with PKCE, so no client
   secret exists to leak; it passes the token to eve's client as a command-line
   argument, visible in that machine's process list while the client runs.
   `ALLOW_ANONYMOUS_ACCESS=true` opens the deployment to anyone, for a public
-  demo, and in the same step removes eve's default tools from the agent for every
-  caller, signed-in callers included: no sandbox shell or files, no web fetch, no web
-  search, no sub-agent. A
+  demo, and in the same step takes eve's default tools away from anonymous callers:
+  no sandbox shell or files, no web fetch, no web search, no sub-agent. A caller with
+  an identity keeps the shell, file and web-fetch tools, decided turn by turn; web
+  search and the sub-agent are off for every caller on such a deployment. A
   visitor gets chat with memory and chat history kept per session and expired 24
   hours after the session's last turn, and the document search tools (`search`,
   `search_aggregate`, `search_count`). The search index is shared, not per visitor,
@@ -69,7 +66,9 @@ real traffic:
   visitor can spend the model budget limited only to 20 messages a minute per
   address, and everything they send is exported as the next point describes. The
   tools are removed when the agent is built, so the setting has to be present at
-  build time too. Do not set it without a spend limit in front of the model. See [Sign-in](docs/configuration.md#sign-in) and
+  build time too; an agent built with one value and started with the other answers
+  `500` to every request. Do not set it without a spend limit in front of the model.
+  See [Sign-in](docs/configuration.md#sign-in) and
   [Anonymous access](docs/configuration.md#anonymous-access).
 
 - **Telemetry exports message content.** The trace policy in
