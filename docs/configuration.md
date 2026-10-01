@@ -16,6 +16,15 @@ Copy `env.example` to `.env.local` and fill in:
 | `OTEL_EXPORTER_OTLP_ENDPOINT`                         | OTLP collector: metrics, and all spans                          |
 | `ALLOW_ANONYMOUS_ACCESS`                              | `true` opens a chat-only agent to anyone (defaults to `false`)  |
 
+The Redis credentials are accepted under either of two pairs of names:
+`UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, or `KV_REST_API_URL` and
+`KV_REST_API_TOKEN`. The second pair is what an Upstash store from the
+[Vercel Marketplace](https://vercel.com/marketplace/upstash/upstash-kv) sets on a
+project, including the store the README's Deploy button creates, so that deployment
+needs no Redis value entered by hand. When both pairs are set, the `UPSTASH_` pair is
+used. A pair must be set whole: one name without the other fails startup, naming the
+missing one.
+
 Startup fails fast on an invalid environment in every mode, local dev
 included. `AI_GATEWAY_MODEL`, `POSTHOG_HOST`, `LOG_LEVEL`, `OTEL_SERVICE_NAME`,
 and `ALLOW_ANONYMOUS_ACCESS` default; `OTEL_EXPORTER_OTLP_ENDPOINT` is genuinely
@@ -63,7 +72,7 @@ where it comes from depends on where the agent runs:
   to a Vercel project and runs `vercel env pull`, which writes a `VERCEL_OIDC_TOKEN`
   to `.env.local`. The token lasts 12 hours, and `vercel env pull` fetches a new
   one. Each pull replaces `.env.local` with the project's Development variables, so
-  on this path keep the four required values on the Vercel project, targeted at
+  on this path keep the required values on the Vercel project, targeted at
   Development, rather than only in the file.
 - **Off Vercel**, a self-hosted deployment sets `AI_GATEWAY_API_KEY`.
 
@@ -177,7 +186,8 @@ same reduced tool set as everyone else.
 2. **Renovate**: install the Renovate GitHub App on this repo — it picks up
    `renovate.json` and opens an onboarding PR.
 3. **Upstash / Braintrust / PostHog**: provision and set the env vars above
-   (locally in `.env.local`, on Vercel via `vercel env`).
+   (locally in `.env.local`, on Vercel via `vercel env`). The Deploy button
+   provisions Upstash itself.
 4. **AI Gateway**: confirm the Vercel team can make gateway calls, and get a local
    credential; see [Model access](#model-access).
 5. **GitHub repository settings**: mark the repository as a template — the
