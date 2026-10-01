@@ -77,9 +77,12 @@ agent/
   extensions/
     agentkit.ts                # agentkit({ memory, search, chatHistory }) — single wiring point
   hooks/
+    anonymous-expiry.ts        # 24-hour expiry on an anonymous session's memory + chat history
     observability.ts           # failure logging + RED metrics off the event stream
   lib/                         # shared authored code (eve's import-only slot)
     agent-name.ts              # the agent name, for workers that cannot resolve it
+    agentkit-user.ts           # the user id AgentKit keys memory + chat history by
+    anonymous-expiry.ts        # hook event handler (testable half of the expiry hook)
     diagnostics.ts             # OTel diag logger + neverThrow telemetry containment
     env.ts                     # zod-validated env vars
     environment.ts             # deployment environment + per-env Braintrust project
