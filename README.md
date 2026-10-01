@@ -1,6 +1,6 @@
 <img src="docs/assets/thumbnail.png" alt="eve Enterprise Starter: memory and RAG, traces and logs, evals, and strict CI gates for eve agents, already wired together. Built on eve, Upstash, Braintrust, PostHog, and OpenTelemetry." width="100%">
 
-# adam: Enterprise starter for eve agents
+# adam
 
 [![CI](https://img.shields.io/github/actions/workflow/status/ahcarpenter/adam/ci.yml?branch=main&label=CI&logo=githubactions&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://github.com/ahcarpenter/adam/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/github/license/ahcarpenter/adam?label=License&logo=opensourceinitiative&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://github.com/ahcarpenter/adam/blob/main/LICENSE)
