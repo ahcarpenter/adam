@@ -55,11 +55,10 @@ real traffic:
   hours after the session's last turn, and the document search tools (`search`,
   `search_aggregate`, `search_count`). The search index is shared, not per visitor,
   so every document in it is readable by anyone: put only public material in it. A
-  visitor can spend the
-  model budget limited only to 20 messages a minute per address, and everything they
-  send is exported as the next point describes. The tools are removed when the agent
-  is built, so the setting has to be present at build time too. Do not set it without
-  a spend limit in front of the model. See
+  visitor can spend the model budget limited only to 20 messages a minute per
+  address, and everything they send is exported as the next point describes. The
+  tools are removed when the agent is built, so the setting has to be present at
+  build time too. Do not set it without a spend limit in front of the model. See
   [Anonymous access](docs/configuration.md#anonymous-access).
 
 - **Telemetry exports message content.** The trace policy in
