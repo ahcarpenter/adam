@@ -75,12 +75,21 @@ so no single startup call reaches them all).
   session ids, which Agent Runs groups traces by). Tests pin the policy,
   what each destination receives, and the audience. Turn both off, and drop the audience,
   before pointing this at regulated traffic.
-- **Request spans** — `traceChannelRequests: true` wraps each inbound channel
-  request in a low-cardinality SERVER span (route template and method, never
-  the concrete URL) that the turn trace links to. PostHog and Braintrust keep
-  only AI spans, so these reach Agent Runs on Vercel (preview and
-  production), and `otlp.ts` sends every span to the
-  collector `OTEL_EXPORTER_OTLP_ENDPOINT` names when it is set.
+- **Request spans** - not recorded for now. `traceChannelRequests` is `false`
+  in `otel.ts`, so no route gets the low-cardinality SERVER span (route
+  template and method, never the concrete URL) that `true` would wrap each
+  inbound channel request in. The reason is a fault in eve (seen on 0.68.0,
+  unchanged in 0.69.0): it ends the request span when the handler returns, so
+  on a streamed response the spans started while the body is read belong to a
+  trace whose root has already ended. eve's bundled `@vercel/otel` then ends
+  them early and they end themselves again, which logged
+  `You can only call end() on a span once` at error level on every stream
+  request and recorded a wrong duration. What is lost is the request span
+  itself, which only Agent Runs on Vercel and the OTLP collector ever
+  received (PostHog and Braintrust keep only AI spans). Turn traces, model
+  calls, tool calls, logs and metrics are unaffected, and Vercel's own
+  request log still records every request. Turn it back on once an eve
+  release fixes this; a test pins it off until then.
 
 One deliberate omission: sampling is 100%, which suits this volume — set
 `OTEL_TRACES_SAMPLER` (honored by eve's trace pipeline) when traffic makes that
