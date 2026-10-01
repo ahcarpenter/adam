@@ -14,6 +14,7 @@ Copy `env.example` to `.env.local` and fill in:
 | `LOG_LEVEL`                                           | winston level, closed set (defaults to `info`)                  |
 | `OTEL_SERVICE_NAME`                                   | `service.name` on logs and metrics (defaults to the agent name) |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`                         | OTLP collector: metrics, and all spans                          |
+| `ALLOW_ANONYMOUS_ACCESS`                              | `true` opens a chat-only agent to anyone (defaults to `false`)  |
 
 The Redis credentials are accepted under either of two pairs of names:
 `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, or `KV_REST_API_URL` and
@@ -40,11 +41,14 @@ other region's host reaches the project. A PostHog organization the Marketplace 
 is billed through the Vercel team, and its region is chosen when it is created.
 
 Startup fails fast on an invalid environment in every mode, local dev
-included. `AI_GATEWAY_MODEL`, `POSTHOG_HOST`, `LOG_LEVEL`, and
-`OTEL_SERVICE_NAME` default; `OTEL_EXPORTER_OTLP_ENDPOINT` is genuinely
+included. `AI_GATEWAY_MODEL`, `POSTHOG_HOST`, `LOG_LEVEL`, `OTEL_SERVICE_NAME`,
+and `ALLOW_ANONYMOUS_ACCESS` default; `OTEL_EXPORTER_OTLP_ENDPOINT` is genuinely
 optional. `LOG_LEVEL` is a closed enum on purpose: winston resolves a level by
 map lookup and drops _every_ record for one it does not recognize, so
 `LOG_LEVEL=warning` would be a silent logging outage rather than an error.
+`ALLOW_ANONYMOUS_ACCESS` is closed for the same kind of reason: only `true` and
+`false` are accepted, so a typo fails startup instead of deciding who can reach
+the agent. See [Anonymous access](#anonymous-access).
 
 Validation lives in `agent/lib/env.ts` and runs at the earliest module load, so an
 incomplete environment fails the process rather than surfacing as a confusing runtime
@@ -97,6 +101,98 @@ only a subset of models, and a team with model or provider allowlists has to all
 the one configured here. The gateway
 [FAQ](https://vercel.com/docs/ai-gateway/faq#why-did-my-ai-gateway-request-fail)
 maps each `402` and `403` to its cause.
+
+## Anonymous access
+
+A deployed agent is closed by default. `agent/channels/eve.ts` ends its auth list
+with eve's `placeholderAuth()`, so in production the only callers let in are the
+ones `vercelOidc()` recognizes: the project's own deployments, and its Vercel team
+through the eve terminal client. Every other caller gets a `401` with the code
+`eve_production_auth_not_configured` on every route except the health check. A fork
+keeps that until it replaces the placeholder with its own auth provider.
+
+`ALLOW_ANONYMOUS_ACCESS=true` replaces the placeholder with eve's `none()`, which
+accepts every caller without a credential, and removes eve's default tools from the
+agent. It exists for a public chat demo deployment.
+Set it on the deployment, not in the repository, and leave it out of the Deploy
+button: a fork should have to choose it.
+
+Before turning it on:
+
+- **Put a spend limit in front of the model first.** Every anonymous turn is a
+  model call billed to the Vercel team's AI Gateway credits. Set an AI Gateway
+  [budget](https://vercel.com/docs/ai-gateway/observability-and-spend/budgets) for
+  the project before the first public request, and do not turn this on without one.
+  The rate limit below slows one address down; it does not cap what the deployment
+  spends.
+- **Turning it on turns eve's default tools off, for everyone.** An anonymous
+  visitor must not reach the sandbox shell (`bash`), sandbox files (`read_file`,
+  `write_file`), `web_fetch`, `web_search`, or the sub-agent (`agent`), so
+  `agent/agent.ts` sets `defaultTools: false` whenever this setting is `true`. That
+  also drops `task_cancel` and `load_skill`, which only serve those. This is one
+  deployment-wide switch on purpose, so the restriction covers every caller,
+  including the ones `vercelOidc()` and `localDev()` identify. eve 0.68 could decide
+  the shell, file and web-fetch tools per caller through dynamic tool resolvers, but
+  web search and the sub-agent tool are fixed when the agent is built, and a single
+  switch is the simpler and safer form. To give signed-in callers the default tools
+  back, run a deployment with this setting off. With it off, nothing changes: the
+  agent has every default tool, as before.
+- **Document search stays, and its index is shared.** What remains is chat plus
+  what the AgentKit extension contributes, none of it a default tool: memory, chat
+  history, and the document search tools `search`, `search_aggregate` and
+  `search_count`. Memory and chat history are kept per visitor, as described below.
+  The search index is not: it is the deployment's one shared index, so with this
+  setting on every document in it is readable by anyone. Put only public material
+  in it.
+- **Set it for the build as well as the running process.** The auth list is read
+  when the agent starts, the tool set when `eve build` or `eve dev` compiles it. On
+  Vercel both read the same project variable, and changing it takes a redeploy. If
+  you build and start in separate steps elsewhere, give both the same value: an
+  agent built with `false` and started with `true` would admit anonymous callers
+  with the default tools still compiled in.
+- **The rate limit is 20 messages a minute per address.** The limiter is the first
+  entry in the auth list, so it applies to anonymous callers before `none()` accepts
+  them, and the 21st message inside a minute gets a `403`. It counts `POST`s, so one
+  turn costs one slot, and it keys on the `x-forwarded-for` header. Vercel
+  overwrites that header itself; on another host, make sure your proxy does, because
+  a caller who can send their own picks their own bucket.
+- **Every visitor is anonymous, and memory is kept per session.** eve gives all of
+  them the same principal id, `anonymous`. `agent/lib/agentkit-user.ts` therefore
+  keys an anonymous caller's memory and chat history by session id, so one visitor's
+  saved facts are never recalled for another. The cost is that a visitor's memory
+  does not follow them into their next session. Callers with an identity are still
+  keyed by principal id.
+- **Anonymous memory and chat history expire after 24 hours.** At the end of every
+  turn of an anonymous session, `agent/hooks/anonymous-expiry.ts` sets a 24-hour
+  Redis expiry on that session's chat-history key and on each of its memory keys, so
+  they expire 24 hours after the session's last turn. Signed-in callers' data is not
+  expired by this, nor any other principal's, and the extension's own deployment-wide
+  chat-history `ttlSeconds` stays off. A memory saved in a turn that never finishes
+  keeps no expiry until the session's next turn. The memory keys are found with a
+  `SCAN` under the session's own key prefix, which costs more as the database grows.
+  Two things are not verified here, because they need a live Upstash database: how
+  Upstash treats an existing expiry when a document is rewritten, and whether its
+  search index drops expired memory documents.
+- **The agent describes itself to anyone.** `GET /eve/v1/info` sits behind the same
+  auth list, so an anonymous caller can read the agent's model, tools, and source
+  file paths.
+- **Conversations are traced in full.** This channel classifies every conversation
+  as public, so Braintrust, PostHog, and the OTLP collector when one is set receive
+  a visitor's complete messages and the model's output, as
+  [docs/observability.md](observability.md) describes. PostHog files every
+  anonymous visitor under the one distinct id `anonymous`. Say so wherever you
+  publish the demo's address.
+
+A visitor connects with eve's terminal client, with nothing to sign in to:
+
+```sh
+npx eve remote connect --url https://your-deployment.vercel.app
+```
+
+The setting decides two things: the last entry of the auth list, and whether the
+agent has eve's default tools. `vercelOidc()` and `localDev()` still run ahead of
+that last entry, so the callers they recognize are identified as before, with the
+same reduced tool set as everyone else.
 
 ## One-time setup (repo owner)
 
