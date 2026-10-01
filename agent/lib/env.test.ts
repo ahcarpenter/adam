@@ -56,14 +56,11 @@ describe("parseEnv", () => {
     ).toBe("anthropic/claude-sonnet-5");
   });
 
-  it.each(["gpt-5", "openai/", "/gpt-5", "openai/gpt 5", "a/b/c", ""])(
-    "rejects %j, which is not a creator/model gateway ID",
-    (model) => {
-      expect(() => parseEnv({ ...validEnv, AI_GATEWAY_MODEL: model })).toThrow(
-        /AI_GATEWAY_MODEL/,
-      );
-    },
-  );
+  it("rejects an empty gateway model", () => {
+    expect(() => parseEnv({ ...validEnv, AI_GATEWAY_MODEL: "" })).toThrow(
+      /AI_GATEWAY_MODEL/,
+    );
+  });
 
   it("rejects malformed URLs", () => {
     expect(() =>

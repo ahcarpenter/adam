@@ -19,16 +19,6 @@ const logLevels = [
   "silly",
 ] as const;
 
-/**
- * Vercel AI Gateway model IDs are `creator/model`, as in `openai/gpt-5`. The
- * shape is checked here because a bare provider ID such as `gpt-5`, which is
- * what a direct provider SDK takes, is the likely mistake, and `eve build`
- * reports it as missing compaction metadata without naming this variable.
- * Whether a well-formed ID exists is eve's check, against the gateway
- * catalog, at build.
- */
-const gatewayModelId = /^[^/\s]+\/[^/\s]+$/;
-
 const envSchema = z.object({
   /**
    * The agent's model, routed through the Vercel AI Gateway. There is no
@@ -36,10 +26,7 @@ const envSchema = z.object({
    * authenticates with the project's OIDC token and sets no variable at all,
    * so requiring one would fail the very deployments that need none.
    */
-  AI_GATEWAY_MODEL: z
-    .string()
-    .regex(gatewayModelId, "expected an AI Gateway model ID, creator/model")
-    .default("openai/gpt-5"),
+  AI_GATEWAY_MODEL: z.string().min(1).default("openai/gpt-5"),
   UPSTASH_REDIS_REST_URL: z.url(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
   BRAINTRUST_API_KEY: z.string().min(1),

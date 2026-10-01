@@ -6,7 +6,7 @@ Copy `env.example` to `.env.local` and fill in:
 
 | Variable                                              | Purpose                                                         |
 | ----------------------------------------------------- | --------------------------------------------------------------- |
-| `AI_GATEWAY_MODEL`                                    | AI Gateway model ID (defaults to `openai/gpt-5`)                |
+| `AI_GATEWAY_MODEL`                                    | AI Gateway model ID, `provider/model` (default `openai/gpt-5`)  |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Memory, RAG, chat history, rate limiting, tool cache            |
 | `BRAINTRUST_API_KEY`                                  | AI trace export                                                 |
 | `POSTHOG_HOST`                                        | PostHog region host (defaults to `https://us.i.posthog.com`)    |
@@ -33,9 +33,12 @@ The model runs through the [Vercel AI Gateway](https://vercel.com/docs/ai-gatewa
 `agent/agent.ts` passes eve a gateway model ID, and no provider key is involved.
 
 `AI_GATEWAY_MODEL` takes any ID from the
-[gateway model list](https://vercel.com/ai-gateway/models), in the form
-`creator/model`. A bare provider ID such as `gpt-5` is rejected, and so is an ID the
-gateway does not list, which `eve build` reports. eve resolves the model when it
+[gateway model list](https://vercel.com/ai-gateway/models). The required form is
+`provider/model`, for example `openai/gpt-5` or `anthropic/claude-sonnet-5`, not the
+bare `gpt-5` a direct provider SDK takes. Startup checks only that the value is not
+empty; `eve build` checks the ID against the gateway catalog and fails on a bare or
+unlisted one, reporting a bare ID as missing compaction metadata without naming this
+variable. eve resolves the model when it
 compiles the agent, so the variable is read by `eve build` and `eve dev`, not by a
 started process: changing the model means a rebuild, which on Vercel is a redeploy.
 
