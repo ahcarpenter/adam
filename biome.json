@@ -13,6 +13,7 @@
       "**/*.mjs",
       "**/*.json",
       "!**/pnpm-lock.yaml",
+      "!!**/.claude/skills",
       "!!**/.eve",
       "!!**/.output",
       "!!**/.vercel",
