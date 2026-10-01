@@ -17,10 +17,11 @@ const eve = join(
 type Setting = "true" | "false" | undefined;
 
 /**
- * The tool set eve resolves for this agent under one state of the setting.
- * `eve info` compiles the agent the way `eve build` does and prints what the
- * model will be offered, so this is eve's own answer, not a reading of
- * agent/agent.ts.
+ * The tools eve compiles into this agent under one state of the setting.
+ * `eve info` compiles the agent the way `eve build` does and prints the
+ * tools every caller is offered, so this is eve's own answer, not a reading
+ * of agent/agent.ts. Tools decided per caller at run time are not in that
+ * list; agent/caller-tools.test.ts covers those.
  */
 async function resolvedTools(setting: Setting): Promise<string[]> {
   const env: NodeJS.ProcessEnv = { ...process.env, ...validEnv };
@@ -66,6 +67,8 @@ describe("agent tool set", () => {
   );
 
   describe("with ALLOW_ANONYMOUS_ACCESS=true", () => {
+    // None is compiled in for every caller. The shell, file and web-fetch
+    // tools come back at run time for callers with an identity.
     it.each(defaultTools)("offers no %s tool", (tool) => {
       expect(tools.get("true")).not.toContain(tool);
     });

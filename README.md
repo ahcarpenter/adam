@@ -44,13 +44,28 @@ value is.
 
 A deployed copy is closed: until you add a sign-in provider or set
 `ALLOW_ANONYMOUS_ACCESS=true`, it answers only the project's own deployments and its
-Vercel team. See [Anonymous access](docs/configuration.md#anonymous-access) before
-opening it.
+Vercel team. To let people in, register a
+[Sign in with Vercel](https://vercel.com/docs/sign-in-with-vercel) app on your team and
+set its client ID as `VERCEL_APP_CLIENT_ID`. Anyone who signs in is then a named user
+with their own memory and chat history, and `pnpm connect <url>` signs in from a
+terminal and opens eve's client. It takes no vendor account, no secret, and no package;
+the cost is that only someone with a Vercel account can sign in. A signed-in user's
+conversations are traced in full, like every conversation.
+
+Signing in is access, not only an identity. A signed-in caller can run commands in the
+agent's sandbox, read and write files there, fetch web pages, and spend the model
+budget, and an app admits any Vercel account unless you restrict it to your team.
+Decide who may sign in, and set a spend limit, first.
+`ALLOW_ANONYMOUS_ACCESS=true` opens a deployment to anyone instead, or as well: a
+visitor who does not sign in can chat and has none of those tools, and a signed-in
+caller keeps the shell, file and web-fetch tools. See
+[Sign-in](docs/configuration.md#sign-in) and
+[Anonymous access](docs/configuration.md#anonymous-access) before opening it.
 
 The button also shows a demo card for a live deployment of this repository at
 <https://adam-umber.vercel.app>, which has been opened that way. It has no chat page in
 the browser: the page at that address shows eve's status and the terminal connect
-command. Chat with it from eve's terminal client, with nothing to sign in to:
+command. Chat with it from eve's terminal client, without signing in:
 
 ```sh
 npx eve remote connect --url https://adam-umber.vercel.app
@@ -58,9 +73,12 @@ npx eve remote connect --url https://adam-umber.vercel.app
 
 - **Conversations are recorded.** Your messages and the model's replies are sent in
   full to Braintrust and PostHog, so do not type anything private.
-- **You can chat, and nothing else.** The agent remembers what you tell it within a
-  session and can search the deployment's shared document index. It has no shell, file
-  or web tools, and it takes 20 messages a minute from one address.
+- **Without signing in, you can chat, and nothing else.** The agent remembers what you
+  tell it within a session and can search the deployment's shared document index. It
+  has no shell, file or web tools for a visitor who does not sign in, and it takes 20
+  messages a minute from one address.
+- **A caller who signs in with Vercel gets more.** They get the sandbox shell, the file
+  tools and web fetch, with their own memory and chat history.
 - **It runs under a spend limit.** When the limit is used up, the demo can be
   unavailable.
 
@@ -107,6 +125,10 @@ pnpm dev            # TUI at http://127.0.0.1:2000
   change the model.
 - **Memory, RAG, and chat history** — Upstash Redis via AgentKit, plus per-caller rate
   limiting and a tool cache. See [capabilities](docs/capabilities.md).
+- **Sign-in** - optional Sign in with Vercel, verified with eve's own OIDC verifier, and
+  a terminal helper that signs in through the browser. Off until a deployment sets one
+  public value. A signed-in caller gets the agent's tools, not only an identity. See
+  [Sign-in](docs/configuration.md#sign-in).
 - **Observability** — structured winston logs to PostHog, AI traces to Braintrust and
   PostHog LLM analytics, OTel metrics to any OTLP collector. The design, the three
   alerts worth paging on, and how to verify the pipeline are in
@@ -146,6 +168,7 @@ pnpm format:check   # biome check + prettier --check
 pnpm test           # vitest run
 pnpm test:coverage  # vitest run --coverage (95% thresholds)
 pnpm eval           # eve eval
+pnpm connect <url>  # sign in with Vercel, then open eve's client on a deployed agent
 pnpm knip           # dead code / unused dependency scan
 ```
 
