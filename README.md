@@ -129,8 +129,8 @@ pnpm dev
 - **Agent runtime** - [eve](https://eve.dev) with the AI SDK, the model routed through
   the Vercel AI Gateway: no provider key, and one optional, validated variable to
   change the model.
-- **Memory, document search, and chat history** - Upstash Redis via AgentKit, plus
-  per-caller rate limiting and a tool cache. See [Capabilities](docs/capabilities.md).
+- **Memory, RAG, and chat history** - Upstash Redis via AgentKit, plus per-caller rate
+  limiting and a tool cache. See [Capabilities](docs/capabilities.md).
 - **Sign-in** - optional Sign in with Vercel, verified with eve's own OIDC verifier, and
   a terminal helper that signs in through the browser. Off until a deployment sets one
   public value. A signed-in caller gets the agent's tools, not only an identity. See
@@ -162,19 +162,21 @@ pnpm dev
 
 ## Commands
 
-- `pnpm dev` - `eve dev` (TUI at `http://127.0.0.1:2000`)
-- `pnpm build` - `eve build`
-- `pnpm typecheck` - `tsc`
-- `pnpm lint` - `biome lint --write .` (auto-fix)
-- `pnpm lint:check` - `biome lint .` (no writes)
-- `pnpm lint:ci` - `biome ci .` (lint + format, CI mode)
-- `pnpm format` - `biome check --write` + `prettier --write` (md/yml/css)
-- `pnpm format:check` - `biome check` + `prettier --check`
-- `pnpm test` - `vitest run`
-- `pnpm test:coverage` - `vitest run --coverage` (95% thresholds)
-- `pnpm eval` - `eve eval`
-- `pnpm connect <url>` - sign in with Vercel, then open eve's client on a deployed agent
-- `pnpm knip` - dead code / unused dependency scan
+```text
+pnpm dev            # eve dev (TUI at http://127.0.0.1:2000)
+pnpm build          # eve build
+pnpm typecheck      # tsc
+pnpm lint           # biome lint --write . (auto-fix)
+pnpm lint:check     # biome lint . (no writes)
+pnpm lint:ci        # biome ci . (lint + format, CI mode)
+pnpm format         # biome check --write + prettier --write (md/yml/css)
+pnpm format:check   # biome check + prettier --check
+pnpm test           # vitest run
+pnpm test:coverage  # vitest run --coverage (95% thresholds)
+pnpm eval           # eve eval
+pnpm connect <url>  # sign in with Vercel, then open eve's client on a deployed agent
+pnpm knip           # dead code / unused dependency scan
+```
 
 `pnpm build` also prepares the agent's sandbox, as eve 0.68 does on every build. Off
 Vercel, eve picks Docker when the Docker daemon answers within about 5 seconds, and
@@ -188,8 +190,7 @@ not be able to start its sandbox.
 
 - [Configuration](docs/configuration.md) - environment variables and one-time setup
 - [Observability design](docs/observability.md) - signals, alerts, verification
-- [Upstash capabilities](docs/capabilities.md) - memory, document search, rate limiting,
-  tool cache
+- [Upstash capabilities](docs/capabilities.md) - memory, RAG, rate limiting, tool cache
 - [Spec, plan, and task history](specs/enterprise-boilerplate.md)
 - [eve documentation](https://eve.dev/docs)
 
