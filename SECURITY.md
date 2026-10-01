@@ -54,11 +54,18 @@ real traffic:
   admitted as anonymous. The terminal helper is a public client with PKCE, so no client
   secret exists to leak; it passes the token to eve's client as a command-line
   argument, visible in that machine's process list while the client runs.
+  Signing in is access, not only an identity: whoever the app admits can run commands
+  in the sandbox, read and write files there, fetch web pages through the agent, and
+  spend the model budget, and an app admits any Vercel account unless you restrict it
+  to your team. On a deployment that is not open to anonymous callers they get web
+  search and the sub-agent as well. No setting keeps sign-in and withholds those tools.
   `ALLOW_ANONYMOUS_ACCESS=true` opens the deployment to anyone, for a public
   demo, and in the same step takes eve's default tools away from anonymous callers:
   no sandbox shell or files, no web fetch, no web search, no sub-agent. A caller with
-  an identity keeps the shell, file and web-fetch tools, decided turn by turn; web
-  search and the sub-agent are off for every caller on such a deployment. A
+  an identity, which includes anyone who signs in, keeps the shell, file and web-fetch
+  tools, decided turn by turn; web search and the sub-agent are off for every caller
+  on such a deployment. Deleting the four files in `agent/tools/` is what withholds
+  those tools from signed-in callers there. A
   visitor gets chat with memory and chat history kept per session and expired 24
   hours after the session's last turn, and the document search tools (`search`,
   `search_aggregate`, `search_count`). The search index is shared, not per visitor,

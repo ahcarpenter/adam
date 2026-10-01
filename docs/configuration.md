@@ -120,6 +120,10 @@ it is the identifier every sign-in request carries. The cost is that only someon
 a Vercel account can sign in. To use another identity provider, replace the one sign-in
 entry in the auth list in `agent/channels/eve.ts`.
 
+Signing in is access, not only an identity. Read
+[What a signed-in caller can use](#what-a-signed-in-caller-can-use) before you decide
+who may sign in.
+
 The two access settings combine like this in production:
 
 | `ALLOW_ANONYMOUS_ACCESS` | `VERCEL_APP_CLIENT_ID` | Who gets in                                                                                                                                                 |
@@ -141,9 +145,8 @@ caller, so an expired sign-in fails loudly instead of quietly becoming a visitor
   keyed by that id (`agent/lib/agentkit-user.ts`), so they follow the person from one
   session to the next and are shared with no one. They are not expired: the 24-hour
   expiry applies to anonymous sessions only.
-- **The shell, file and web-fetch tools on a deployment that also admits anonymous
-  callers**, where an anonymous caller gets none of eve's default tools. See
-  [Anonymous access](#anonymous-access).
+- **Tools, the shared search index and the model budget.** Which tools depends on the
+  deployment; the next section lists them.
 - **Their conversations are traced in full, exactly as every conversation is.**
   Signing in does not reduce what is captured. Braintrust, PostHog, and the OTLP
   collector when one is set receive a signed-in user's complete messages and the
@@ -165,6 +168,61 @@ Vercel team members can still reach production with no sign-in, through eve's te
 client and `vercelOidc()`. That path identifies the project, not the person: every team
 member arrives as the same `service` principal and they share one memory and one chat
 history. A team member who wants their own signs in instead.
+
+### What a signed-in caller can use
+
+What signing in opens depends on both settings:
+
+- **`ALLOW_ANONYMOUS_ACCESS` off, `VERCEL_APP_CLIENT_ID` unset.** Nobody can sign in.
+- **`ALLOW_ANONYMOUS_ACCESS` off, `VERCEL_APP_CLIENT_ID` set.** A signed-in caller goes
+  from a `401` to the whole agent: every one of eve's default tools, which are the
+  sandbox shell (`bash`), sandbox files (`read_file`, `write_file`), `web_fetch`,
+  `web_search` and the sub-agent (`agent`); the document search tools, whose index is
+  shared by every caller; their own memory and chat history; and the model budget.
+- **`ALLOW_ANONYMOUS_ACCESS` on, `VERCEL_APP_CLIENT_ID` unset.** Nobody can sign in.
+  Every caller is an anonymous visitor, with chat, memory and chat history kept per
+  session, document search, and none of eve's default tools.
+- **`ALLOW_ANONYMOUS_ACCESS` on, `VERCEL_APP_CLIENT_ID` set.** A visitor who does not
+  sign in is that same anonymous visitor: no shell, no file tools, no web fetch, no web
+  search, no sub-agent. A signed-in caller gets the sandbox shell (`bash`), the sandbox
+  files (`read_file`, `write_file`) and `web_fetch` on top of what a visitor has, with
+  memory and chat history of their own that do not expire. Web search and the sub-agent
+  stay off for every caller on such a deployment.
+
+So in both combinations where sign-in is on, whoever your app lets sign in can run
+commands in the sandbox, read and write files there, fetch web pages through the
+agent, read the shared search index, and spend the model budget, limited only by the
+rate limit of 20 messages a minute per address. An app admits anyone with a Vercel
+account unless you restrict it, and a Vercel account is free to create.
+
+adam's own production is exactly that case, by its owner's choice: an open demo whose
+app admits any Vercel account. Anyone with a Vercel account can sign in there and run
+commands in its sandbox, read and write files there, fetch pages, and spend its model
+budget. A visitor who does not sign in has chat and none of those tools.
+
+Put a spend limit in front of the model before you let anyone sign in. Every turn a
+signed-in caller takes is a model call billed to the Vercel team's AI Gateway credits.
+Set an AI Gateway
+[budget](https://vercel.com/docs/ai-gateway/observability-and-spend/budgets) for the
+project first. The rate limit slows one address down; it does not cap what the
+deployment spends.
+
+If you do not want signed-in callers to have that:
+
+- **Restrict the app to members of your team.** Then only your team can sign in, and
+  your team can already reach the deployment without signing in. It is a setting on
+  the app; see [Register the app](#register-the-app).
+- **Or, on a deployment open to anonymous callers, delete the four files in
+  `agent/tools/`, and `agent/caller-tools.test.ts`, which tests them.** No setting
+  keeps sign-in and withholds the tools; those files are what gives them back. Without
+  them, such a deployment has none of eve's default tools for any caller, and signing
+  in gives an identity and separate memory and nothing else. A deployment that is not
+  open to anonymous callers is unaffected: it has eve's own default tools with or
+  without the files.
+- **On a deployment that is not open to anonymous callers, there is no way to keep
+  sign-in and withhold the default tools from signed-in callers alone.**
+  `defaultTools: false` in `agent/agent.ts` removes them for every caller, your team
+  included.
 
 ### Register the app
 
@@ -205,8 +263,11 @@ It is read when the agent starts. Leave it out of the Deploy button, like
 By default anyone with a Vercel account can sign in to an app. Vercel can instead
 restrict an app to members of the team that owns it, a setting on the app described
 under [sign-in access](https://vercel.com/docs/sign-in-with-vercel/manage-from-dashboard).
-adam's own production app keeps the default, anyone with a Vercel account, because
-signing in there only gives a caller their own identity.
+Restrict yours to team members unless you mean every Vercel account holder to have
+[what a signed-in caller can use](#what-a-signed-in-caller-can-use). adam's own
+production app keeps the default, anyone with a Vercel account. That is its owner's
+decision, made knowing that it gives every account holder the sandbox shell, the file
+tools, web fetch and the model budget there.
 
 ### Connect from a terminal
 
@@ -286,10 +347,12 @@ Before turning it on:
   user, the project's own deployments and Vercel team, and local development.
   `agent/tools/bash.ts`, `read_file.ts`, `write_file.ts` and `web_fetch.ts` then export
   a resolver that eve runs at the start of every turn, which offers the tool to an
-  identified caller and nothing to an anonymous one. The rule is one function,
-  `identifiedCaller` in `agent/lib/caller.ts`, and it judges the caller of the turn,
-  not of the session: an anonymous follow-up on a signed-in user's session gets no
-  tools. `web_search`, the sub-agent and `task_cancel` do not come back for anyone,
+  identified caller and nothing to an anonymous one. With sign-in configured, an
+  identified caller includes anyone your app lets sign in: read
+  [What a signed-in caller can use](#what-a-signed-in-caller-can-use). The rule is
+  one function, `identifiedCaller` in `agent/lib/caller.ts`, and it judges the caller
+  of the turn, not of the session: an anonymous follow-up on a signed-in user's
+  session gets no tools. `web_search`, the sub-agent and `task_cancel` do not come back for anyone,
   because eve fixes those when the agent is built and cannot decide them per caller.
   `load_skill` stays off as well: adam ships no skills for it to load. To give
   signed-in callers every default tool, run a deployment with this setting off. With it off, nothing changes: the four files export eve's own tool, and

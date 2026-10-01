@@ -49,8 +49,15 @@ set its client ID as `VERCEL_APP_CLIENT_ID`. Anyone who signs in is then a named
 with their own memory and chat history, and `pnpm connect <url>` signs in from a
 terminal and opens eve's client. It takes no vendor account, no secret, and no package;
 the cost is that only someone with a Vercel account can sign in. A signed-in user's
-conversations are traced in full, like every conversation. `ALLOW_ANONYMOUS_ACCESS=true`
-opens a deployment to anyone instead, or as well. See
+conversations are traced in full, like every conversation.
+
+Signing in is access, not only an identity. A signed-in caller can run commands in the
+agent's sandbox, read and write files there, fetch web pages, and spend the model
+budget, and an app admits any Vercel account unless you restrict it to your team.
+Decide who may sign in, and set a spend limit, first.
+`ALLOW_ANONYMOUS_ACCESS=true` opens a deployment to anyone instead, or as well: a
+visitor who does not sign in can chat and has none of those tools, and a signed-in
+caller keeps the shell, file and web-fetch tools. See
 [Sign-in](docs/configuration.md#sign-in) and
 [Anonymous access](docs/configuration.md#anonymous-access).
 
@@ -116,7 +123,8 @@ pnpm dev            # TUI at http://127.0.0.1:2000
   limiting and a tool cache. See [capabilities](docs/capabilities.md).
 - **Sign-in** - optional Sign in with Vercel, verified with eve's own OIDC verifier, and
   a terminal helper that signs in through the browser. Off until a deployment sets one
-  public value. See [Sign-in](docs/configuration.md#sign-in).
+  public value. A signed-in caller gets the agent's tools, not only an identity. See
+  [Sign-in](docs/configuration.md#sign-in).
 - **Observability** — structured winston logs to PostHog, AI traces to Braintrust and
   PostHog LLM analytics, OTel metrics to any OTLP collector. The design, the three
   alerts worth paging on, and how to verify the pipeline are in
