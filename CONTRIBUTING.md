@@ -178,24 +178,39 @@ injects Vercel context at session start because it detects an eve project.
 
 #### Vercel agent skills
 
-`.claude/skills/` vendors the nine skills of
-[`vercel-labs/agent-skills`](https://github.com/vercel-labs/agent-skills), whose README
-describes each: `deploy-to-vercel`, `vercel-cli-with-tokens`,
-`vercel-composition-patterns`, `vercel-optimize`, `vercel-react-best-practices`,
-`vercel-react-native-skills`, `vercel-react-view-transitions`, `web-design-guidelines`,
-and `writing-guidelines`. Claude Code loads them on demand, with nothing to install.
+`.claude/skills/` vendors three skills from
+[`vercel-labs/agent-skills`](https://github.com/vercel-labs/agent-skills). Claude Code
+loads them on demand, with nothing to install.
 
+| Skill                | Use it to                                                               |
+| -------------------- | ----------------------------------------------------------------------- |
+| `deploy-to-vercel`   | Deploy the project to Vercel                                            |
+| `vercel-optimize`    | Audit a deployed project's cost and performance from its Vercel metrics |
+| `writing-guidelines` | Review docs and prose against Vercel's writing handbook                 |
+
+- **Why only three:** the rest of that repository targets React, React Native, or web
+  UI, which a headless agent has none of, or, in the case of `vercel-cli-with-tokens`,
+  has an agent read a token out of `.env` files.
 - **Do not edit them:** they are copied from upstream as-is, which is why Biome and
   Prettier skip `.claude/skills/`. [`skills-lock.json`](skills-lock.json) records each
   skill's source and content hash.
-- **Always name the agent:** to add or refresh skills, run
-  `npx skills add vercel-labs/agent-skills --skill '*' --agent claude-code --yes`, and
-  commit the result together with the lock file. This is an eve project, so without
-  `--agent` the installer targets eve and writes into `agent/skills/`, which would ship
-  the skills inside the deployed agent. `npx skills update` does exactly that, because
-  it takes no agent: do not use it here.
-- **Skills run with your agent's permissions:** read one before relying on it. Some
-  carry scripts, and `deploy-to-vercel` can upload the project to Vercel.
+- **Refresh them by name, for a named agent:** run the command below and commit the
+  result together with the lock file.
+
+  ```sh
+  npx skills add vercel-labs/agent-skills \
+    --skill deploy-to-vercel vercel-optimize writing-guidelines \
+    --agent claude-code --yes
+  ```
+
+  `--skill '*'` would bring back every skill in that repository. This is an eve
+  project, so without `--agent` the installer targets eve and writes into
+  `agent/skills/`, which would ship the skills inside the deployed agent.
+  `npx skills update` does exactly that, because it takes no agent: do not use it here.
+
+- **Skills run with your agent's permissions:** read one before relying on it.
+  `deploy-to-vercel` can upload the project to Vercel, `vercel-optimize` runs its own
+  scripts, and `writing-guidelines` fetches its rules from GitHub each time it runs.
 - The `skills` installer sends anonymous usage telemetry unless `DISABLE_TELEMETRY=1`
   or `DO_NOT_TRACK=1` is set.
 
