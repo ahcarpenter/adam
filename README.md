@@ -1,6 +1,6 @@
 <img src="docs/assets/thumbnail.png" alt="eve Enterprise Starter: memory and RAG, traces and logs, evals, and strict CI gates for eve agents, already wired together. Built on eve, Upstash, Braintrust, PostHog, and OpenTelemetry." width="100%">
 
-# adam: Enterprise starter for eve agents
+# adam
 
 [![CI](https://img.shields.io/github/actions/workflow/status/ahcarpenter/adam/ci.yml?branch=main&label=CI&logo=githubactions&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://github.com/ahcarpenter/adam/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/github/license/ahcarpenter/adam?label=License&logo=opensourceinitiative&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://github.com/ahcarpenter/adam/blob/main/LICENSE)
@@ -11,8 +11,8 @@ Meet **adam**, a production-shaped starting point for [eve](https://eve.dev) age
 with observability, evals, dependency automation, and a 95% coverage gate already wired
 together.
 
-adam gives your agent memory, document search and chat history on Upstash Redis, sends
-its logs and AI traces to PostHog and Braintrust, and runs lint, type checks, tests and
+adam gives your agent memory, document search, and chat history on Upstash Redis, sends
+its logs and AI traces to PostHog and Braintrust, and runs lint, type checks, tests, and
 a real `eve build` in CI. You fork it and delete what you do not need, instead of
 assembling it a second time.
 
@@ -21,7 +21,7 @@ assembling it a second time.
 The button asks for two values and shows a demo card for a live deployment, where
 conversations are recorded. [Deploy to Vercel](#deploy-to-vercel) explains both.
 
-[Quick Start](#quick-start) ·
+[Quick start](#quick-start) ·
 [Configuration](docs/configuration.md) ·
 [Observability](docs/observability.md) ·
 [Capabilities](docs/capabilities.md) ·
@@ -33,15 +33,19 @@ conversations are recorded. [Deploy to Vercel](#deploy-to-vercel) explains both.
 The button above clones the repository and asks for two values: `BRAINTRUST_API_KEY` and
 `POSTHOG_PROJECT_TOKEN`. The build fails until both are set. The PostHog host defaults
 to the US address, `https://us.i.posthog.com`: set `POSTHOG_HOST` for a project in
-another region. Redis needs no value typed in: the button creates an Upstash Redis
-store from the Vercel Marketplace, which sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`
-on the project. At that step the form asks you to choose a plan and a region for the
-store. A team that has not added the Upstash integration before may also be asked to
-[accept its terms](https://vercel.com/docs/cli/integration). The model asks for
-nothing: it runs through the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway),
-which a Vercel deployment reaches with its own project credentials and bills to the
-team's AI Gateway credits. See [Configuration](docs/configuration.md) for what each
-value is.
+another region.
+
+Redis needs no value typed in: the button creates an Upstash Redis store from the
+Vercel Marketplace, which sets `KV_REST_API_URL` and `KV_REST_API_TOKEN` on the
+project. At that step the form asks you to choose a plan and a region for the store. A
+team that has not added the Upstash integration before may also be asked to
+[accept its terms](https://vercel.com/docs/cli/integration).
+
+The model asks for nothing: it runs through the
+[Vercel AI Gateway](https://vercel.com/docs/ai-gateway), which a Vercel deployment
+reaches with its own project credentials and bills to the team's AI Gateway credits.
+
+See [Configuration](docs/configuration.md) for what each value is.
 
 A deployed copy is closed: until you add a sign-in provider or set
 `ALLOW_ANONYMOUS_ACCESS=true`, it answers only the project's own deployments and its
@@ -59,7 +63,7 @@ budget, and an app admits any Vercel account unless you restrict it to your team
 Decide who may sign in, and set a spend limit, first.
 `ALLOW_ANONYMOUS_ACCESS=true` opens a deployment to anyone instead, or as well: a
 visitor who does not sign in can chat and has none of those tools, and a signed-in
-caller keeps the shell, file and web-fetch tools. See
+caller keeps the shell, file, and web-fetch tools. See
 [Sign-in](docs/configuration.md#sign-in) and
 [Anonymous access](docs/configuration.md#anonymous-access) before opening it.
 
@@ -76,14 +80,14 @@ npx eve remote connect --url https://adam-umber.vercel.app
   full to Braintrust and PostHog, so do not type anything private.
 - **Without signing in, you can chat, and nothing else.** The agent remembers what you
   tell it within a session and can search the deployment's shared document index. It
-  has no shell, file or web tools for a visitor who does not sign in, and it takes 20
+  has no shell, file, or web tools for a visitor who does not sign in, and it takes 20
   messages a minute from one address.
 - **A caller who signs in with Vercel gets more.** They get the sandbox shell, the file
-  tools and web fetch, with their own memory and chat history.
+  tools, and web fetch, with their own memory and chat history.
 - **It runs under a spend limit.** When the limit is used up, the demo can be
   unavailable.
 
-## Quick Start
+## Quick start
 
 Requires [Node.js](https://nodejs.org) `24.x` and pnpm `12.x`.
 
@@ -95,7 +99,7 @@ cd adam
 pnpm install
 ```
 
-Fill in the environment — startup validates every variable, in every mode:
+Fill in the environment - startup validates every variable, in every mode:
 
 ```sh
 cp env.example .env.local
@@ -116,48 +120,49 @@ team needs before the first call.
 Then start the agent:
 
 ```sh
-pnpm dev            # TUI at http://127.0.0.1:2000
+# TUI at http://127.0.0.1:2000
+pnpm dev
 ```
 
 ## What's included
 
-- **Agent runtime** — [eve](https://eve.dev) with the AI SDK, the model routed through
+- **Agent runtime** - [eve](https://eve.dev) with the AI SDK, the model routed through
   the Vercel AI Gateway: no provider key, and one optional, validated variable to
   change the model.
-- **Memory, RAG, and chat history** — Upstash Redis via AgentKit, plus per-caller rate
-  limiting and a tool cache. See [capabilities](docs/capabilities.md).
+- **Memory, RAG, and chat history** - Upstash Redis via AgentKit, plus per-caller rate
+  limiting and a tool cache. See [Capabilities](docs/capabilities.md).
 - **Sign-in** - optional Sign in with Vercel, verified with eve's own OIDC verifier, and
   a terminal helper that signs in through the browser. Off until a deployment sets one
   public value. A signed-in caller gets the agent's tools, not only an identity. See
   [Sign-in](docs/configuration.md#sign-in).
-- **Observability** — structured winston logs to PostHog, AI traces to Braintrust and
+- **Observability** - structured winston logs to PostHog, AI traces to Braintrust and
   PostHog LLM analytics, OTel metrics to any OTLP collector. The design, the three
   alerts worth paging on, and how to verify the pipeline are in
   [docs/observability.md](docs/observability.md).
-- **Quality gates in CI** — Biome, Prettier, `tsc`, a real `eve build`, Knip, and Vitest
+- **Quality gates in CI** - Biome, Prettier, `tsc`, a real `eve build`, Knip, and Vitest
   at 95% project and patch coverage through Codecov.
-- **Dependency automation** — Renovate, with the eve/AgentKit contract pairing already
+- **Dependency automation** - Renovate, with the eve/AgentKit contract pairing already
   encoded so a bump cannot silently break `eve build`.
-- **Evals** — deterministic eval suites under `evals/`, reporting to their own
+- **Evals** - deterministic eval suites under `evals/`, reporting to their own
   Braintrust project.
 
 ## Why this starter
 
 - **Fails fast, everywhere.** An incomplete environment stops the process at module
-  load — in local dev too, not only in production.
+  load - in local dev too, not only in production.
 - **Instrumentation cannot take down the agent.** Every hook runs inside `neverThrow`.
   eve 0.68 already logs a thrown hook and carries on with the turn, so the wrapper is
   a precaution there.
 - **Signals earn their place.** Each metric and log line maps to a question on-call
   actually has to answer; cardinality stays in logs and traces, not in metric labels.
 - **CI builds, not just typechecks.** `tsc` does not run eve's compiler, so CI runs
-  `eve build` — otherwise extension contract breaks are invisible until deploy.
+  `eve build` - otherwise extension contract breaks are invisible until deploy.
 - **The reasoning is written down.** Comments and docs say why a decision was made, not
   what the line does.
 
 ## Commands
 
-```sh
+```text
 pnpm dev            # eve dev (TUI at http://127.0.0.1:2000)
 pnpm build          # eve build
 pnpm typecheck      # tsc
@@ -181,17 +186,17 @@ Either have Docker running, or run `pnpm build --skip-sandbox-prewarm` for a
 compile-only check, which is what CI runs. Do not deploy output built that way: it may
 not be able to start its sandbox.
 
-## Learn More
+## Learn more
 
-- [Configuration](docs/configuration.md) — environment variables and one-time setup
-- [Observability design](docs/observability.md) — signals, alerts, verification
-- [Upstash capabilities](docs/capabilities.md) — memory, RAG, rate limiting, tool cache
+- [Configuration](docs/configuration.md) - environment variables and one-time setup
+- [Observability design](docs/observability.md) - signals, alerts, verification
+- [Upstash capabilities](docs/capabilities.md) - memory, RAG, rate limiting, tool cache
 - [Spec, plan, and task history](specs/enterprise-boilerplate.md)
 - [eve documentation](https://eve.dev/docs)
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) to get started, and
+Contributions are welcome - see [CONTRIBUTING.md](CONTRIBUTING.md) to get started, and
 [SUPPORT.md](SUPPORT.md) for where to ask questions.
 
 This project follows the [Contributor Covenant](CODE_OF_CONDUCT.md). Security
@@ -199,4 +204,4 @@ vulnerabilities go through [SECURITY.md](SECURITY.md), never the issue tracker.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).
