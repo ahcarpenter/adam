@@ -200,11 +200,11 @@ importers:
         specifier: ^8.7.1
         version: 8.13.2(@ai-sdk/provider@4.0.19)(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-http@0.222.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.11.0(@opentelemetry/api@1.9.1))(posthog-node@5.54.1)
       '@upstash/agentkit-eve':
-        specifier: 0.13.0
-        version: 0.13.0(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)))
+        specifier: 0.15.1
+        version: 0.15.1(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(eve@0.76.3(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)))
       '@upstash/agentkit-eve-extension':
-        specifier: 0.13.0
-        version: 0.13.0(eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)))
+        specifier: 0.16.0
+        version: 0.16.0(eve@0.76.3(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)))
       '@upstash/redis':
         specifier: ^1.39.0
         version: 1.39.0
@@ -215,8 +215,8 @@ importers:
         specifier: ^3.27.0
         version: 3.35.0(supports-color@7.2.0)(zod@4.6.5)
       eve:
-        specifier: ^0.68.0
-        version: 0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))
+        specifier: ^0.76.0
+        version: 0.76.3(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))
       winston:
         specifier: ^3.19.0
         version: 3.19.0
@@ -1215,18 +1215,18 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@upstash/agentkit-ai-sdk@0.9.0':
-    resolution: {integrity: sha512-4lFDRRYOPXxjsQ4EyEoEBb3t68QcPK7dfxW/Hldx6V+nXCfLFtssuazkxI1bq08O+C8+mv9b1BKHqafWE2DDTw==}
+  '@upstash/agentkit-ai-sdk@0.15.1':
+    resolution: {integrity: sha512-J12IQNhX259ltSutRf1JYHzXuoIx1xEOBl1XUp3LwWgppq0DYWkpATXJCMW4yqJ/kgU8szdFnCebL0oeLXlEJg==}
     peerDependencies:
-      ai: '>=7.0.0-beta'
+      ai: '>=7.0.0-beta.57'
 
-  '@upstash/agentkit-eve-extension@0.13.0':
-    resolution: {integrity: sha512-M7BlxGgyz9EMa88NEzF5gSyzopTc/6tbnpLUYTgx7mfCtZbeVCEAC63x1qO2M1Uc7L5dhmEWOII24Yoh+ZFzEw==}
+  '@upstash/agentkit-eve-extension@0.16.0':
+    resolution: {integrity: sha512-gonjFfrw69vKopuNJqdfcxYXZdGvHgGsVDtsVdXjV3Ac+Oc1HuBLvNofM1LwkFX+E+FTS339k1mcTwniHh56gQ==}
     peerDependencies:
-      eve: '>=0.65.0'
+      eve: '>=0.74.0'
 
-  '@upstash/agentkit-eve@0.13.0':
-    resolution: {integrity: sha512-1UIjzLFpnAd/6ly4RindDGCGNcryVRkUtPLf+ZRHUIzS8F7MMMcosUqWc7nvdVpv6RWW3+TQjJst/mTm0P+6+g==}
+  '@upstash/agentkit-eve@0.15.1':
+    resolution: {integrity: sha512-3dtU3crz+DWLm/VZoMXCUxF6AAIZ1/+wrolg84yBZOdVESbY+zy/7MjY0aFiHYEYuA5iYNnbPjTdYRjZGzGKzw==}
     peerDependencies:
       '@upstash/box': '>=0.7.1'
       '@upstash/redis': '>=1.38.4'
@@ -1526,13 +1526,13 @@ packages:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
 
-  eve@0.68.0:
-    resolution: {integrity: sha512-1cvxOdbfESdhZjAdhjUwFJSx0B6uWkbaEvwmau6vNhHNX9A+SZaathd79acDzQNYbOa+5WjsypOx4wa8KjKtgQ==}
+  eve@0.76.3:
+    resolution: {integrity: sha512-HX9DYinxSo/7YjRfhmDPgcfCTDCYzdaG9UF0UcLSwTWWy7QXw4pfQ0YAoIFXHnHKMk2zN7cXr9kichKaOMmBYw==}
     engines: {node: '>=24'}
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.0.0
-      ai: ^7.0.105
+      ai: ^7.0.128
       braintrust: ^3.0.0
       chat: ^4.41.0
       dd-trace: ^6.13.0
@@ -2122,8 +2122,8 @@ packages:
     resolution: {integrity: sha512-dkrQXeHSaoamnItlYbmzG0wFYrM0ZwDxCIg0A7aKjTyyhh9svRzCNFEzV+Vm05/yehjCzjDZ31KXfGEjYSztDQ==}
     engines: {node: '>=20.18.1'}
 
-  undici@8.9.0:
-    resolution: {integrity: sha512-aWZpUj7XoGonMClx4gdDRfgBjqeA+F473aDmROQQbM9n6PRfK/u1q/a0X4wMTgcHfT8H6fpbt98PFuDUwFg2YA==}
+  undici@8.10.2:
+    resolution: {integrity: sha512-/y4/bH9YNU5hi9NIrpOuvGXFcxrj3CMrV+/AYpowAYTpHn8gX/XPFjNy766FPoYY0miQhdW977JFWKGNhBdwyQ==}
     engines: {node: '>=22.19.0'}
 
   unenv@2.0.0-rc.24:
@@ -2881,26 +2881,26 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@upstash/agentkit-ai-sdk@0.9.0(ai@7.0.122(zod@4.6.5))':
+  '@upstash/agentkit-ai-sdk@0.15.1(ai@7.0.122(zod@4.6.5))':
     dependencies:
       '@upstash/agentkit-sdk': 0.9.0(@upstash/redis@1.39.0)
       '@upstash/redis': 1.39.0
       ai: 7.0.122(zod@4.6.5)
       zod: 4.6.5
 
-  '@upstash/agentkit-eve-extension@0.13.0(eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)))':
+  '@upstash/agentkit-eve-extension@0.16.0(eve@0.76.3(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)))':
     dependencies:
       '@upstash/agentkit-sdk': 0.9.0(@upstash/redis@1.39.0)
       '@upstash/redis': 1.39.0
-      eve: 0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))
+      eve: 0.76.3(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))
       zod: 4.6.5
 
-  '@upstash/agentkit-eve@0.13.0(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)))':
+  '@upstash/agentkit-eve@0.15.1(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(eve@0.76.3(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)))':
     dependencies:
-      '@upstash/agentkit-ai-sdk': 0.9.0(ai@7.0.122(zod@4.6.5))
+      '@upstash/agentkit-ai-sdk': 0.15.1(ai@7.0.122(zod@4.6.5))
       '@upstash/agentkit-sdk': 0.9.0(@upstash/redis@1.39.0)
       '@upstash/redis': 1.39.0
-      eve: 0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))
+      eve: 0.76.3(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))
       zod: 4.6.5
     transitivePeerDependencies:
       - ai
@@ -3216,11 +3216,11 @@ snapshots:
 
   etag@1.8.1: {}
 
-  eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)):
+  eve@0.76.3(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)):
     dependencies:
       ai: 7.0.122(zod@4.6.5)
       nitro: 3.0.260903-beta
-      undici: 8.9.0
+      undici: 8.10.2
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
       braintrust: 3.35.0(supports-color@7.2.0)(zod@4.6.5)
@@ -3839,7 +3839,7 @@ snapshots:
 
   undici@7.30.0: {}
 
-  undici@8.9.0: {}
+  undici@8.10.2: {}
 
   unenv@2.0.0-rc.24:
     dependencies:
