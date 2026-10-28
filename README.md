@@ -3,7 +3,7 @@
 # adam
 
 [![CI](https://img.shields.io/github/actions/workflow/status/ahcarpenter/adam/ci.yml?branch=main&label=CI&logo=githubactions&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://github.com/ahcarpenter/adam/actions/workflows/ci.yml)
-[![MIT license](https://img.shields.io/github/license/ahcarpenter/adam?label=License&logo=opensourceinitiative&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://github.com/ahcarpenter/adam/blob/main/LICENSE)
+[![Apache-2.0 license](https://img.shields.io/github/license/ahcarpenter/adam?label=License&logo=opensourceinitiative&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://github.com/ahcarpenter/adam/blob/main/LICENSE)
 [![Node 24.x](https://img.shields.io/badge/Node-24.x-000?logo=nodedotjs&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://nodejs.org)
 [![Built with eve](https://img.shields.io/badge/Built%20with-eve-000?logo=vercel&style=flat-square&logoColor=FFF&labelColor=000&color=000)](https://eve.dev)
 
@@ -204,4 +204,4 @@ vulnerabilities go through [SECURITY.md](SECURITY.md), never the issue tracker.
 
 ## License
 
-MIT - see [LICENSE](LICENSE).
+Apache-2.0 - see [LICENSE](LICENSE).

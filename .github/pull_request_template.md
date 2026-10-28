@@ -15,4 +15,4 @@ Fixes #(issue)
 - [ ] `pnpm knip` reports no new dead code or unused dependencies.
 - [ ] Documentation is updated if behavior, configuration, or telemetry changed.
 - [ ] I wrote this contribution, or otherwise have the right to submit it under the
-      project's [MIT license](../LICENSE).
+      project's [Apache-2.0 license](../LICENSE).
