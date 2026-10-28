@@ -270,7 +270,7 @@ it can be acted on. If the project is not archived, it is maintained.
 
 ## Licensing
 
-Contributions are accepted under the same license as the project — MIT, see
+Contributions are accepted under the same license as the project — Apache-2.0, see
 [LICENSE](LICENSE). By opening a pull request you confirm you wrote the contribution or
 otherwise have the right to submit it under that license.
 
