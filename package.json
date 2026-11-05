@@ -44,7 +44,7 @@
     "eve": "^0.68.0",
     "winston": "^3.19.0",
     "winston-transport": "^4.9.0",
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.7",
