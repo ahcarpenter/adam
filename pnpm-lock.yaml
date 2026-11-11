@@ -168,7 +168,7 @@ importers:
     dependencies:
       '@braintrust/otel':
         specifier: ^1.0.1
-        version: 1.0.1(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.11.0(@opentelemetry/api@1.9.1))(@opentelemetry/exporter-trace-otlp-http@0.222.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.11.0(@opentelemetry/api@1.9.1))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))
+        version: 1.0.1(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.11.0(@opentelemetry/api@1.9.1))(@opentelemetry/exporter-trace-otlp-http@0.222.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.11.0(@opentelemetry/api@1.9.1))(braintrust@3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5))
       '@opentelemetry/api':
         specifier: ^1.9.1
         version: 1.9.1
@@ -201,10 +201,10 @@ importers:
         version: 8.13.2(@ai-sdk/provider@4.0.19)(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-http@0.222.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.11.0(@opentelemetry/api@1.9.1))(posthog-node@5.54.1)
       '@upstash/agentkit-eve':
         specifier: 0.13.0
-        version: 0.13.0(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)))
+        version: 0.13.0(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5)))
       '@upstash/agentkit-eve-extension':
         specifier: 0.13.0
-        version: 0.13.0(eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)))
+        version: 0.13.0(eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5)))
       '@upstash/redis':
         specifier: ^1.39.0
         version: 1.39.0
@@ -213,10 +213,10 @@ importers:
         version: 7.0.122(zod@4.6.5)
       braintrust:
         specifier: ^3.27.0
-        version: 3.35.0(supports-color@7.2.0)(zod@4.6.5)
+        version: 3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5)
       eve:
         specifier: ^0.68.0
-        version: 0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))
+        version: 0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5))
       winston:
         specifier: ^3.19.0
         version: 3.19.0
@@ -578,6 +578,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@isaacs/nonrecursive-glob-match@1.1.0':
+    resolution: {integrity: sha512-GPm/Dbvk5RLmhRnxXIa7nTpK0xtl4E0wj0MslsuNiJ1FIROU+2+9lgUC/dgF7Ey4QCWhfEsgxilMRMCdHPfDfw==}
+
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
 
@@ -669,6 +672,7 @@ packages:
   '@opentelemetry/sdk-trace-base@2.11.0':
     resolution: {integrity: sha512-H19x/TX/LZdqiYOjM7fqtSxwlplC5pgelavqbQdHbhdq0q/AI/TGkM2dfGuuynTXmJPeF2HoZVoPDu+TGoW78A==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.3.0 <1.10.0'
 
@@ -1355,11 +1359,15 @@ packages:
     resolution: {integrity: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==}
     engines: {node: 20 || >=22}
 
-  braintrust@3.35.0:
-    resolution: {integrity: sha512-WozT9N/M/HhMgyUS/fM99WW9NWqXS0I4lfQgil/uVeYOLTHxgngrxESAxWC53OkaxgxjFLFHFYHDWpLxc5R6Sw==}
+  braintrust@3.44.0:
+    resolution: {integrity: sha512-QMjlci0l0EHTET+kBAkT8xtih16QAVR9Z0kHxS4AYwdRoVzGmA7r52dgiOzC8WfV8cYHIII3CaQH/Hvt7G0bxQ==}
     hasBin: true
     peerDependencies:
+      '@types/react': '>=18'
       zod: ^3.25.34 || ^4.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   bytes@3.1.2:
     resolution: {integrity: sha512-/Nf7TyzTx6S3yRJObOAV7956r8cr2+Oj8AC5dt8wSP3BQAoeX58NoHyCU8P8zGkNXStjTSi6fzO6F0pBdcYbEg==}
@@ -1831,9 +1839,9 @@ packages:
     resolution: {integrity: sha512-Lbgzdk0h4juoQ9fCKXW4by0UJqj+nOOrI9MJ1sSj4nI8aI2eo1qmvQEie4VD1glsS250n15LsWsYtCugiStS5A==}
     engines: {node: '>=18'}
 
-  minimatch@10.2.6:
-    resolution: {integrity: sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==}
-    engines: {node: 18 || 20 || >=22}
+  minimatch@11.0.6:
+    resolution: {integrity: sha512-6NZbDPQIRnsJFjJ9wbd5659OKaTHCqpPHdldE3WwArjxr5wLxHIwnx4eTGcPebpVBZZQbITvQQIx8K0VGXoT3Q==}
+    engines: {node: 20 || >=22}
 
   module-details-from-path@1.0.4:
     resolution: {integrity: sha512-EGWKgxALGMgzvxYF1UyGTy0HXX/2vHLkw6+NvDKW2jypWbHpjQuj4UMcqQWXHERJhVGKikolT06G3bcKe4fi7w==}
@@ -2364,13 +2372,13 @@ snapshots:
   '@braintrust/bt-win32-x64@0.12.0':
     optional: true
 
-  '@braintrust/otel@1.0.1(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.11.0(@opentelemetry/api@1.9.1))(@opentelemetry/exporter-trace-otlp-http@0.222.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.11.0(@opentelemetry/api@1.9.1))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))':
+  '@braintrust/otel@1.0.1(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.11.0(@opentelemetry/api@1.9.1))(@opentelemetry/exporter-trace-otlp-http@0.222.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.11.0(@opentelemetry/api@1.9.1))(braintrust@3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5))':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.11.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/exporter-trace-otlp-http': 0.222.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-base': 2.11.0(@opentelemetry/api@1.9.1)
-      braintrust: 3.35.0(supports-color@7.2.0)(zod@4.6.5)
+      braintrust: 3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5)
 
   '@colors/colors@1.5.0':
     optional: true
@@ -2478,6 +2486,8 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.1':
     optional: true
+
+  '@isaacs/nonrecursive-glob-match@1.1.0': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
@@ -2812,12 +2822,14 @@ snapshots:
     dependencies:
       undici-types: 7.24.6
 
-  '@types/prop-types@15.7.15': {}
+  '@types/prop-types@15.7.15':
+    optional: true
 
   '@types/react@18.3.31':
     dependencies:
       '@types/prop-types': 15.7.15
       csstype: 3.2.3
+    optional: true
 
   '@types/triple-beam@1.3.5': {}
 
@@ -2888,19 +2900,19 @@ snapshots:
       ai: 7.0.122(zod@4.6.5)
       zod: 4.6.5
 
-  '@upstash/agentkit-eve-extension@0.13.0(eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)))':
+  '@upstash/agentkit-eve-extension@0.13.0(eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5)))':
     dependencies:
       '@upstash/agentkit-sdk': 0.9.0(@upstash/redis@1.39.0)
       '@upstash/redis': 1.39.0
-      eve: 0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))
+      eve: 0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5))
       zod: 4.6.5
 
-  '@upstash/agentkit-eve@0.13.0(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)))':
+  '@upstash/agentkit-eve@0.13.0(@upstash/redis@1.39.0)(ai@7.0.122(zod@4.6.5))(eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5)))':
     dependencies:
       '@upstash/agentkit-ai-sdk': 0.9.0(ai@7.0.122(zod@4.6.5))
       '@upstash/agentkit-sdk': 0.9.0(@upstash/redis@1.39.0)
       '@upstash/redis': 1.39.0
-      eve: 0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5))
+      eve: 0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5))
       zod: 4.6.5
     transitivePeerDependencies:
       - ai
@@ -3020,10 +3032,9 @@ snapshots:
     dependencies:
       balanced-match: 4.0.4
 
-  braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5):
+  braintrust@3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5):
     dependencies:
       '@next/env': 14.2.35
-      '@types/react': 18.3.31
       '@vercel/functions': 1.6.0
       acorn: 8.18.0
       acorn-import-attributes: 1.9.5(acorn@8.18.0)
@@ -3041,7 +3052,7 @@ snapshots:
       express: 5.2.1(supports-color@7.2.0)
       http-errors: 2.0.1
       meriyah: 6.1.4
-      minimatch: 10.2.6
+      minimatch: 11.0.6
       module-details-from-path: 1.0.4
       mustache: 4.2.0
       pluralize: 8.0.0
@@ -3060,6 +3071,7 @@ snapshots:
       '@braintrust/bt-linux-x64-musl': 0.12.0
       '@braintrust/bt-win32-arm64': 0.12.0
       '@braintrust/bt-win32-x64': 0.12.0
+      '@types/react': 18.3.31
     transitivePeerDependencies:
       - '@aws-sdk/credential-provider-web-identity'
       - supports-color
@@ -3126,7 +3138,8 @@ snapshots:
     optionalDependencies:
       srvx: 1.0.5
 
-  csstype@3.2.3: {}
+  csstype@3.2.3:
+    optional: true
 
   db0@0.4.1: {}
 
@@ -3216,14 +3229,14 @@ snapshots:
 
   etag@1.8.1: {}
 
-  eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.35.0(supports-color@7.2.0)(zod@4.6.5)):
+  eve@0.68.0(@opentelemetry/api@1.9.1)(ai@7.0.122(zod@4.6.5))(braintrust@3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5)):
     dependencies:
       ai: 7.0.122(zod@4.6.5)
       nitro: 3.0.260903-beta
       undici: 8.9.0
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
-      braintrust: 3.35.0(supports-color@7.2.0)(zod@4.6.5)
+      braintrust: 3.44.0(@types/react@18.3.31)(supports-color@7.2.0)(zod@4.6.5)
 
   eventsource-parser@1.1.2: {}
 
@@ -3492,8 +3505,9 @@ snapshots:
     dependencies:
       mime-db: 1.54.0
 
-  minimatch@10.2.6:
+  minimatch@11.0.6:
     dependencies:
+      '@isaacs/nonrecursive-glob-match': 1.1.0
       brace-expansion: 5.0.12
 
   module-details-from-path@1.0.4: {}
