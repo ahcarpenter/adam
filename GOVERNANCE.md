@@ -16,6 +16,9 @@ grows more maintainers, this document changes with it.
 Disagreement is welcome and is expected to be argued in the open. A decision that cannot
 be explained is a decision that should be revisited.
 
+Significant decisions are recorded, with the alternatives that lost and why, in
+[docs/decisions/](docs/decisions/README.md).
+
 ## Roles
 
 ### Maintainers
