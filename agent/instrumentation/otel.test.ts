@@ -108,6 +108,20 @@ describe("otel trace policy", () => {
   );
 });
 
+// With the request span on, eve 0.68.0 and 0.69.0 end the spans of a streamed
+// response twice: it ends the request span when the handler returns, its
+// bundled @vercel/otel takes the first span started while the body is read
+// for the trace's root, and ending that one ends the others still open
+// before they end themselves. Every stream request then logs "You can only
+// call end() on a span once" at error. The fault is in eve, so the only
+// thing adam can pin is the setting that sets it off. Turn it back on, and
+// change this test, once an eve release fixes it.
+describe("otel request spans", () => {
+  it("stay off while eve ends a streamed response's spans twice", () => {
+    expect(declaration.options.traceChannelRequests).toBe(false);
+  });
+});
+
 // The policy above admits full content and user identity to every
 // destination; Agent Runs is the one that must receive operational metadata
 // only, while PostHog and Braintrust keep all of it.
