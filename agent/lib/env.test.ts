@@ -99,6 +99,19 @@ describe("parseEnv", () => {
     ).toThrow(/UPSTASH_REDIS_REST_TOKEN/);
   });
 
+  it("trims whitespace around POSTHOG_PROJECT_TOKEN", () => {
+    for (const token of ["phc_token\n", "  phc_token  "]) {
+      const env = parseEnv({ ...validEnv, POSTHOG_PROJECT_TOKEN: token });
+      expect(env.POSTHOG_PROJECT_TOKEN).toBe("phc_token");
+    }
+  });
+
+  it("rejects a whitespace-only POSTHOG_PROJECT_TOKEN", () => {
+    expect(() =>
+      parseEnv({ ...validEnv, POSTHOG_PROJECT_TOKEN: " \n" }),
+    ).toThrow(/POSTHOG_PROJECT_TOKEN/);
+  });
+
   it("keeps a winston log level", () => {
     expect(parseEnv({ ...validEnv, LOG_LEVEL: "debug" }).LOG_LEVEL).toBe(
       "debug",
@@ -335,6 +348,25 @@ describe("parseEnv", () => {
       };
       expect(() => parseEnv(source)).toThrow(/at POSTHOG_PROJECT_TOKEN/);
       expect(() => parseEnv(source)).not.toThrow(/NEXT_PUBLIC_POSTHOG/);
+    });
+
+    it("trims whitespace around a NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN", () => {
+      for (const token of ["phc_marketplace\n", "  phc_marketplace  "]) {
+        const env = parseEnv({
+          ...posthogMarketplaceEnv,
+          NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: token,
+        });
+        expect(env.POSTHOG_PROJECT_TOKEN).toBe("phc_marketplace");
+      }
+    });
+
+    it("rejects a whitespace-only NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN", () => {
+      expect(() =>
+        parseEnv({
+          ...posthogMarketplaceEnv,
+          NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: " \n",
+        }),
+      ).toThrow(/NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN/);
     });
 
     it("rejects a malformed NEXT_PUBLIC_POSTHOG_HOST", () => {
