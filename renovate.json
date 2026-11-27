@@ -1,6 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
+  "npm": {
+    "description": "Wait as long as pnpm does before proposing an npm update: Renovate reads pnpm's minimumReleaseAge and minimumReleaseAgeExclude from pnpm-workspace.yaml (pnpm's default of 1 day when unset), and strict filtering opens no branch or PR until a release is old enough, listing it on the Dependency Dashboard meanwhile.",
+    "minimumReleaseAgePackageManagerSync": true,
+    "internalChecksFilter": "strict"
+  },
   "lockFileMaintenance": {
     "enabled": true
   },
