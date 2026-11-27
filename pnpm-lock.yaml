@@ -217,7 +217,7 @@ importers:
         version: 0.34.0
       '@posthog/ai':
         specifier: ^8.7.1
-        version: 8.22.2(@ai-sdk/provider@4.0.39)(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-http@0.223.2(@opentelemetry/api@1.9.1))(posthog-node@6.1.0(@opentelemetry/api@1.9.1))
+        version: 8.22.3(@ai-sdk/provider@4.0.39)(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-http@0.223.2(@opentelemetry/api@1.9.1))(posthog-node@6.1.1(@opentelemetry/api@1.9.1))
       '@upstash/agentkit-eve':
         specifier: 0.20.0
         version: 0.20.0(@upstash/redis@1.41.1)(ai@7.0.183(zod@4.6.7))(eve@1.5.0(@opentelemetry/api@1.9.1)(ai@7.0.183(zod@4.6.7))(braintrust@3.44.0(zod@4.6.7))(vite@8.3.8(@types/node@24.19.4)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1)))
@@ -967,8 +967,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@posthog/ai@8.22.2':
-    resolution: {integrity: sha512-hqtRyxJDBt27vmfBYAkIU+lzWO/zOG+5fBKNwWqxo5EzqmFi/tZv+jlZxpQHvVFkYo3rVLfk/Aq++g7sSkvD3g==}
+  '@posthog/ai@8.22.3':
+    resolution: {integrity: sha512-ScvJigjZzDJzSfJgtcZoGskghRy3P1dQvu4gmItddxZ/59Tyt7tOfF/o6jN6m8lqEU3UtteFvNB/dQeBtujjMw==}
     engines: {node: ^20.20.0 || >=22.22.0}
     peerDependencies:
       '@ai-sdk/provider': ^2.0.0 || ^3.0.0 || ^4.0.0
@@ -2067,8 +2067,8 @@ packages:
     resolution: {integrity: sha512-RVHEU9/Pp1Fnjr/MpAJsZoADukCKhfIi15OunEYiGktIkYLkPVvC1sioWolGDS7XByMTx9m/IGbro0Js13zhnQ==}
     engines: {node: ^10 || ^12 || >=14}
 
-  posthog-node@6.1.0:
-    resolution: {integrity: sha512-rqvdFmFbzdoHviJ5nES68DYoKRhoHtB36m8+g4ehVcgnaKMj8iKh84FS2lKXkiTha5CKFhJGi1qLl8aivSdfEg==}
+  posthog-node@6.1.1:
+    resolution: {integrity: sha512-eDarznTYjjnnPv475sJ8PAp9w34JYxl0S19A8219As+6svR3sqSm42N+WLKzUZ26aq6mM8t2zAmd4wD2+X9GcA==}
     engines: {node: ^20.20.0 || >=22.22.0}
     peerDependencies:
       '@opentelemetry/api': ^1.2.0
@@ -2897,10 +2897,10 @@ snapshots:
   '@oxc-resolver/binding-win32-x64-msvc@11.24.2':
     optional: true
 
-  '@posthog/ai@8.22.2(@ai-sdk/provider@4.0.39)(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-http@0.223.2(@opentelemetry/api@1.9.1))(posthog-node@6.1.0(@opentelemetry/api@1.9.1))':
+  '@posthog/ai@8.22.3(@ai-sdk/provider@4.0.39)(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-http@0.223.2(@opentelemetry/api@1.9.1))(posthog-node@6.1.1(@opentelemetry/api@1.9.1))':
     dependencies:
       '@posthog/core': 1.69.2
-      posthog-node: 6.1.0(@opentelemetry/api@1.9.1)
+      posthog-node: 6.1.1(@opentelemetry/api@1.9.1)
       uuid: 11.1.1
       zod: 4.6.7
     optionalDependencies:
@@ -3806,7 +3806,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.4
 
-  posthog-node@6.1.0(@opentelemetry/api@1.9.1):
+  posthog-node@6.1.1(@opentelemetry/api@1.9.1):
     dependencies:
       '@posthog/core': 1.69.2
     optionalDependencies:
