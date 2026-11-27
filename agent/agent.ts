@@ -37,9 +37,13 @@ export default defineAgent({
   build: {
     // @opentelemetry/winston-transport loads winston-transport at runtime
     // through createRequire, which the bundler copies into the function
-    // unresolved. Kept external, the package ships in the deployed
-    // function's node_modules, where that require finds it; bundled, the
-    // function fails to start with "Cannot find module 'winston-transport'".
-    externalDependencies: ["winston-transport"],
+    // unresolved: bundled, the function fails to start with "Cannot find
+    // module 'winston-transport'". Kept external, winston ships with its
+    // whole package tree, winston-transport included, in the deployed
+    // function's node_modules, where that require finds it. Listing
+    // winston-transport alone is not enough: eve then bundles winston itself
+    // and leaves winston's own requires (logform) pointing at the build
+    // machine's paths.
+    externalDependencies: ["winston"],
   },
 });
