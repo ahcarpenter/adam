@@ -104,16 +104,21 @@ const marketplaceUpstashSchema = z
  * adam is not a Next.js app. That pair has no default host: the integration
  * always sets one, for the region its token belongs to, and nothing sent to
  * the other region's host reaches the project.
+ *
+ * Either token is trimmed before it is checked: a value pasted with a
+ * trailing newline would otherwise reach the log exporter's `Authorization`
+ * header, which Node rejects with `ERR_INVALID_CHAR`, failing every export.
+ * A token that is only whitespace still fails as empty.
  */
 const posthogSchema = z.object({
   POSTHOG_HOST: z.url().default("https://us.i.posthog.com"),
-  POSTHOG_PROJECT_TOKEN: z.string().min(1),
+  POSTHOG_PROJECT_TOKEN: z.string().trim().min(1),
 });
 
 const marketplacePosthogSchema = z
   .object({
     NEXT_PUBLIC_POSTHOG_HOST: z.url(),
-    NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().min(1),
+    NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().trim().min(1),
   })
   .transform((names) => ({
     POSTHOG_HOST: names.NEXT_PUBLIC_POSTHOG_HOST,
