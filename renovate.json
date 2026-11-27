@@ -15,6 +15,32 @@
       "matchPackageNames": ["/^@opentelemetry\\//"]
     },
     {
+      "description": "Hold the opentelemetry group on the SDK 2 line, which runs on @opentelemetry/api 1.9.x: eve 1.5 bundles its own @opentelemetry/api 1.9.1, and two API copies in one process make eve's tracer registration fail, so the function exits. Each range stops a package family below its SDK 3 release, so SDK 2 patch and minor updates still arrive grouped. Lift these holds once eve uses @opentelemetry/api 1.10; the branch fm/adam-otel-sdk3-awaiting-eve then carries the SDK 3 update.",
+      "matchPackageNames": ["@opentelemetry/api"],
+      "allowedVersions": "<1.10.0"
+    },
+    {
+      "description": "SDK 2 hold, see the @opentelemetry/api rule: the SDK 3 releases of these start at 0.300.0.",
+      "matchPackageNames": [
+        "@opentelemetry/api-logs",
+        "@opentelemetry/sdk-logs",
+        "@opentelemetry/exporter-logs-otlp-http",
+        "@opentelemetry/exporter-metrics-otlp-http",
+        "@opentelemetry/exporter-trace-otlp-http"
+      ],
+      "allowedVersions": "<0.300.0"
+    },
+    {
+      "description": "SDK 2 hold, see the @opentelemetry/api rule: the SDK 3 releases of these start at 3.0.0.",
+      "matchPackageNames": ["@opentelemetry/resources", "@opentelemetry/sdk-metrics"],
+      "allowedVersions": "<3.0.0"
+    },
+    {
+      "description": "SDK 2 hold, see the @opentelemetry/api rule: the SDK 3 release of this starts at 0.35.0.",
+      "matchPackageNames": ["@opentelemetry/winston-transport"],
+      "allowedVersions": "<0.35.0"
+    },
+    {
       "description": "eve and the Upstash AgentKit extension are a matched pair: the extension's _manifest.json declares the eve release it was built with and its distribution contract, and `eve build` fails when the installed eve is older than that release or does not support that contract. Group them so neither moves alone.",
       "groupName": "eve runtime",
       "matchPackageNames": [
