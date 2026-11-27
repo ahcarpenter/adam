@@ -9,6 +9,7 @@ import winston from "winston";
 import type TransportStream from "winston-transport";
 import { ensureOtelDiagnostics } from "./diagnostics";
 import { parseEnv } from "./env";
+import { oncePerProcess } from "./process-once";
 import { telemetryResource } from "./resource";
 import { flushOnExit } from "./shutdown";
 
@@ -59,28 +60,34 @@ export function defaultTransports(): unknown[] {
  * exporting to PostHog Logs. Throws on an incomplete environment (via
  * parseEnv) so a misconfigured process fails at startup in every mode,
  * local dev included. No-op when the default logger already has transports.
+ *
+ * The logger provider is registered once per process, not once per copy of
+ * this module: a process that loads the module twice configures both copies'
+ * winston, and both bridge into the one provider the OTel logs API holds.
  */
 export function ensureLogger(): void {
   if (defaultTransports().length > 0) return;
 
   const env = parseEnv();
   ensureOtelDiagnostics();
-  const provider = new LoggerProvider({
-    resource: telemetryResource(env.OTEL_SERVICE_NAME),
-    processors: [
-      // Batched at the SDK default of one second, which is also the window
-      // of records a frozen or hard-killed process loses — flushOnExit
-      // covers an orderly exit, nothing covers those two.
-      new BatchLogRecordProcessor({
-        exporter: new OTLPLogExporter({
-          url: `${env.POSTHOG_HOST}/i/v1/logs`,
-          headers: { Authorization: `Bearer ${env.POSTHOG_PROJECT_TOKEN}` },
+  oncePerProcess("logger-provider", () => {
+    const provider = new LoggerProvider({
+      resource: telemetryResource(env.OTEL_SERVICE_NAME),
+      processors: [
+        // Batched at the SDK default of one second, which is also the
+        // window of records a frozen or hard-killed process loses —
+        // flushOnExit covers an orderly exit, nothing covers those two.
+        new BatchLogRecordProcessor({
+          exporter: new OTLPLogExporter({
+            url: `${env.POSTHOG_HOST}/i/v1/logs`,
+            headers: { Authorization: `Bearer ${env.POSTHOG_PROJECT_TOKEN}` },
+          }),
         }),
-      }),
-    ],
+      ],
+    });
+    logs.setGlobalLoggerProvider(provider);
+    flushOnExit(provider);
   });
-  logs.setGlobalLoggerProvider(provider);
-  flushOnExit(provider);
   configureDefaultLogger({
     level: env.LOG_LEVEL,
     extraTransports: [new OpenTelemetryTransportV3()],

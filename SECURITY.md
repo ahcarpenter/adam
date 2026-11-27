@@ -63,8 +63,8 @@ real traffic:
   demo, and in the same step takes eve's default tools away from anonymous callers:
   no sandbox shell or files, no web fetch, no web search, no sub-agent. A caller with
   an identity, which includes anyone who signs in, keeps the shell, file and web-fetch
-  tools, decided turn by turn; web search and the sub-agent are off for every caller
-  on such a deployment. Deleting the four files in `agent/tools/` is what withholds
+  tools, decided again before every model call; web search and the sub-agent are off
+  for every caller on such a deployment. Deleting the five files in `agent/tools/` is what withholds
   those tools from signed-in callers there. A
   visitor gets chat with memory and chat history kept per session and expired 24
   hours after the session's last turn, and the document search tools (`search`,
@@ -81,12 +81,12 @@ real traffic:
 - **Telemetry exports message content.** The trace policy in
   `agent/instrumentation/otel.ts` sets `recordInputs` and `recordOutputs` to `true` for
   every environment and audience, and `agent/channels/eve.ts` classifies every
-  conversation as `public` so eve does not cap private and anonymous ones to metadata.
+  conversation as `public` so eve keeps the caller's principal ids on those spans.
   Braintrust, PostHog, and the OTLP collector (when `OTEL_EXPORTER_OTLP_ENDPOINT` is set)
   therefore receive full message history and model output. That holds for a signed-in
   user too, whose principal id, containing their Vercel user id, goes to Braintrust and
   PostHog with the content. Failure logs additionally carry
-  a `details` payload that can include model input. Treat all three as content stores, and
+  eve's error message, which can quote model input. Treat all three as content stores, and
   turn these off before handling regulated data. Vercel Agent Runs receives operational
   metadata without message content or user identifiers:
   `agent/instrumentation/agent-runs.ts` redacts inputs and outputs from every span it

@@ -151,8 +151,8 @@ pnpm dev
 - **Fails fast, everywhere.** An incomplete environment stops the process at module
   load - in local dev too, not only in production.
 - **Instrumentation cannot take down the agent.** Every hook runs inside `neverThrow`.
-  eve 0.68 already logs a thrown hook and carries on with the turn, so the wrapper is
-  a precaution there.
+  A hook that throws fails the turn it runs in, so a failing log or metric call is
+  caught there rather than ending a user's turn.
 - **Signals earn their place.** Each metric and log line maps to a question on-call
   actually has to answer; cardinality stays in logs and traces, not in metric labels.
 - **CI builds, not just typechecks.** `tsc` does not run eve's compiler, so CI runs
@@ -178,13 +178,12 @@ pnpm connect <url>  # sign in with Vercel, then open eve's client on a deployed 
 pnpm knip           # dead code / unused dependency scan
 ```
 
-`pnpm build` also prepares the agent's sandbox, as eve 0.68 does on every build. Off
-Vercel, eve picks Docker when the Docker daemon answers within about 5 seconds, and
-otherwise falls back to microsandbox (Apple Silicon macOS, or Linux with KVM) or else
-just-bash, neither of which adam installs, so the build fails.
-Either have Docker running, or run `pnpm build --skip-sandbox-prewarm` for a
-compile-only check, which is what CI runs. Do not deploy output built that way: it may
-not be able to start its sandbox.
+`pnpm build` also prepares the agent's sandbox, as eve does on every build, and records
+which provider the built agent uses. Off Vercel, that is Docker when the Docker daemon
+answers within about 5 seconds; without it the build still succeeds, but the built agent
+has no sandbox, and its first sandbox tool call fails asking you to start Docker and
+rebuild. Run `pnpm build --skip-sandbox-prewarm` for a compile-only check, which is what
+CI runs. Do not deploy output built that way: it may not be able to start its sandbox.
 
 ## Learn more
 

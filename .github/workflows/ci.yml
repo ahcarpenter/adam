@@ -42,12 +42,11 @@ jobs:
       # module load, which discovery triggers, but nothing connects during a
       # build. The model runs through the Vercel AI Gateway, whose credential
       # is only needed for a model call, so the build sets none.
-      # Off Vercel, eve's default sandbox picks its provider by probing the
-      # runner: Docker if the daemon answers within 5 s, else microsandbox on
-      # a KVM host, whose optional package adam does not install. A slow
-      # daemon then fails the build on a provider adam never deploys to, so
-      # this output, which is never deployed, skips sandbox preparation.
-      # Vercel builds still prepare Vercel Sandbox as usual.
+      # Off Vercel, eve prepares the sandbox on whatever provider the runner
+      # has, Docker on ubuntu-latest, and records that choice in the build.
+      # This output is never deployed, so it skips sandbox preparation rather
+      # than build a Docker sandbox nothing uses. Vercel builds still prepare
+      # Vercel Sandbox as usual.
       - name: Build (eve compile + bundle)
         run: pnpm build --skip-sandbox-prewarm
         env:

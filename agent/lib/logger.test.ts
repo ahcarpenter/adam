@@ -99,8 +99,16 @@ describe("configureDefaultLogger", () => {
   });
 });
 
+/** What a new process looks like: no logger provider registered yet. */
+function freshProcess() {
+  delete (globalThis as Record<symbol, unknown>)[
+    Symbol.for("adam.once-per-process.logger-provider")
+  ];
+}
+
 describe("ensureLogger", () => {
   beforeEach(() => {
+    freshProcess();
     otlpLogExporter.mockClear();
     batchProcessor.mockClear();
     loggerProvider.mockClear();
@@ -193,6 +201,27 @@ describe("ensureLogger", () => {
     ensureLogger();
 
     expect(process.listenerCount("beforeExit")).toBe(before + 1);
+  });
+
+  // eve can load this module twice in one process: `eve build` evaluates it
+  // to compile the agent, then loads it again in a shared bundle to prepare
+  // the sandbox, with its own copy of winston. The OTel logs API takes one
+  // provider per process and logs an error for a second, so each copy
+  // configures its winston and only the first registers a provider.
+  it("registers one provider per process when the module is loaded twice", async () => {
+    for (const [key, value] of Object.entries(validEnv)) vi.stubEnv(key, value);
+    winston.configure({ transports: [] });
+    ensureLogger();
+
+    vi.resetModules();
+    const second = await import("./logger");
+    winston.configure({ transports: [] });
+    second.ensureLogger();
+
+    expect(logs.setGlobalLoggerProvider).toHaveBeenCalledTimes(1);
+    expect(loggerProvider).toHaveBeenCalledTimes(1);
+    expect(defaultTransports()).toHaveLength(2);
+    expect(defaultTransports()[1]).toBeInstanceOf(OpenTelemetryTransportV3);
   });
 
   it("throws on an incomplete environment", () => {

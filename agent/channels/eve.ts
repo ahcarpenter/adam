@@ -66,12 +66,13 @@ export default eveChannel({
     // Must stay last: none() accepts every request that reaches it.
     ...lastResort(env),
   ],
-  // Only lifts eve's trace-content cap; auth, rate limits, delivery unchanged.
-  // eve caps content to metadata for private and unknown conversations
-  // outside development, after and regardless of the tracePolicy in
-  // agent/instrumentation/otel.ts, so the full capture that policy states
-  // only holds if every conversation is classified public here. That covers
-  // a signed-in user's conversations too: they are traced in full, like
-  // every other conversation. This one line is where that is decided.
+  // Tracing only; auth, rate limits and delivery are unchanged. The
+  // tracePolicy in agent/instrumentation/otel.ts records content for every
+  // audience, but outside development eve records the caller's principal ids
+  // on spans, and shows the session's workflow run content, only for public
+  // conversations. Classifying every conversation public keeps both, so the
+  // traces Braintrust and PostHog receive name their user (agent-runs.ts
+  // strips the ids for Vercel Agent Runs). That covers a signed-in user's
+  // conversations too. This one line is where that is decided.
   audience: "public",
 });

@@ -8,6 +8,9 @@ export default agentkit({
   // Memory and chat history are keyed by this. The extension's default would
   // give every anonymous caller the same key; see agent/lib/agentkit-user.ts.
   userId: agentkitUserId,
+  // minScore keeps recall to keyword matching, as it was before AgentKit
+  // 0.20 indexed memory for hybrid search too. Remove it to recall by
+  // meaning as well.
   memory: { topK: 5, minScore: 1 },
   // Minimal placeholder index: replace the schema and indexName with your
   // domain documents. The index is created reactively on first use.

@@ -74,7 +74,7 @@ compiles the agent, so the variable is read by `eve build` and `eve dev`, not by
 started process: changing the model means a rebuild, which on Vercel is a redeploy.
 
 Routing through the gateway also changes eve's built-in `web_search` tool. For a
-gateway model it runs on the gateway's search provider, Exa by default, where a
+gateway model it runs on the gateway's search provider, Parallel by default, where a
 direct provider model used that provider's own search. An
 `agent/tools/web_search.ts` can pick another provider or replace the tool.
 
@@ -348,22 +348,22 @@ Before turning it on:
   spends.
 - **Turning it on takes eve's default tools away from anonymous callers, and some of
   them from everyone.** An anonymous visitor must not reach the sandbox shell
-  (`bash`), sandbox files (`read_file`, `write_file`), `web_fetch`, `web_search`, or
-  the sub-agent (`agent`), so `agent/agent.ts` sets `defaultTools: false` whenever
-  this setting is `true`. Four of them come back for a caller who has an identity,
+  (`bash`), sandbox files (`read_file`, `write_file`, `edit_file`), `web_fetch`,
+  `web_search`, or the sub-agent (`agent`), so `agent/agent.ts` sets
+  `defaultTools: false` whenever this setting is `true`. Five of them come back for a caller who has an identity,
   meaning anyone the auth list recognized before it reached `none()`: a signed-in
   user, the project's own deployments and Vercel team, and local development.
-  `agent/tools/bash.ts`, `read_file.ts`, `write_file.ts` and `web_fetch.ts` then export
-  a resolver that eve runs at the start of every turn, which offers the tool to an
-  identified caller and nothing to an anonymous one. With sign-in configured, an
+  `agent/tools/bash.ts`, `read_file.ts`, `write_file.ts`, `edit_file.ts` and
+  `web_fetch.ts` then export a resolver that eve runs before every model call, which
+  offers the tool to an identified caller and nothing to an anonymous one. With sign-in configured, an
   identified caller includes anyone your app lets sign in: read
   [What a signed-in caller can use](#what-a-signed-in-caller-can-use). The rule is
   one function, `identifiedCaller` in `agent/lib/caller.ts`, and it judges the caller
   of the turn, not of the session: an anonymous follow-up on a signed-in user's
-  session gets no tools. `web_search`, the sub-agent and `task_cancel` do not come back for anyone,
-  because eve fixes those when the agent is built and cannot decide them per caller.
-  `load_skill` stays off as well: adam ships no skills for it to load. To give
-  signed-in callers every default tool, run a deployment with this setting off. With it off, nothing changes: the four files export eve's own tool, and
+  session gets no tools. `web_search` and the sub-agent, with its task tools, do not
+  come back for anyone, because eve fixes those when the agent is built and cannot
+  decide them per caller. To give signed-in callers every default tool, run a
+  deployment with this setting off. With it off, nothing changes: the five files export eve's own tool, and
   the agent has every default tool, as before. `agent/caller-tools.test.ts` runs a
   built agent to pin all of this.
 - **Document search stays, and its index is shared.** What remains is chat plus
@@ -377,8 +377,8 @@ Before turning it on:
   when the agent starts, the tool set when `eve build` or `eve dev` compiles it. On
   Vercel both read the same project variable, and changing it takes a redeploy. If
   you build and start in separate steps elsewhere, give both the same value. An
-  agent built with one value and started with the other does not serve: under eve
-  0.68 every request gets a `500`, and the log names one of the four tool files,
+  agent built with one value and started with the other does not serve: every
+  request gets a `500`, and the log names one of the five tool files,
   because what the file exports no longer matches what was compiled. That includes
   the dangerous case, an agent built with `false`, default tools compiled in, and
   started with `true`.
@@ -406,9 +406,10 @@ Before turning it on:
   Two things are not verified here, because they need a live Upstash database: how
   Upstash treats an existing expiry when a document is rewritten, and whether its
   search index drops expired memory documents.
-- **The agent describes itself to anyone.** `GET /eve/v1/info` sits behind the same
-  auth list, so an anonymous caller can read the agent's model, tools, and source
-  file paths.
+- **The agent describes itself only to operators.** `GET /eve/v1/info`, which lists
+  the agent's model, tools, and source file paths, answers only the project's own
+  deployments and Vercel team (`vercelOidc()`) and local development. Anonymous and
+  signed-in callers get a `403` with code `info_forbidden`.
 - **Conversations are traced in full.** This channel classifies every conversation
   as public, so Braintrust, PostHog, and the OTLP collector when one is set receive
   a visitor's complete messages and the model's output, as

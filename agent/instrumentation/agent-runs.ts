@@ -1,12 +1,15 @@
 import { agentRuns } from "eve/instrumentation/otel";
 
-// Attributes that name the user: eve's principal ids, the memory store id
+// Attributes that name the user: eve's principal ids, including those of
+// whoever answered an approval or approved a tool call, the memory store id
 // (a principal-scoped memory key embeds the principal id), and every
 // app-authored runtime-context value (posthog.ts stamps the user's
 // principal id there as posthog_distinct_id).
 const IDENTIFYING_ATTRIBUTES = new Set([
   "agent.principal.current.id",
   "agent.principal.initiator.id",
+  "agent.approval.responder.id",
+  "agent.tool.approver.id",
   "gen_ai.memory.store.id",
 ]);
 const AUTHORED_RUNTIME_CONTEXT = "ai.settings.context.";

@@ -108,16 +108,11 @@ describe("otel trace policy", () => {
   );
 });
 
-// With the request span on, eve 0.68.0 and 0.69.0 end the spans of a streamed
-// response twice: it ends the request span when the handler returns, its
-// bundled @vercel/otel takes the first span started while the body is read
-// for the trace's root, and ending that one ends the others still open
-// before they end themselves. Every stream request then logs "You can only
-// call end() on a span once" at error. The fault is in eve, so the only
-// thing adam can pin is the setting that sets it off. Turn it back on, and
-// change this test, once an eve release fixes it.
+// Request spans are a destination-volume choice, stated in otel.ts rather
+// than inherited, so an eve default that changed would not change what Agent
+// Runs and the OTLP collector receive.
 describe("otel request spans", () => {
-  it("stay off while eve ends a streamed response's spans twice", () => {
+  it("stay off, as otel.ts states", () => {
     expect(declaration.options.traceChannelRequests).toBe(false);
   });
 });
@@ -144,6 +139,8 @@ const content = {
 const identifiers = {
   "agent.principal.current.id": "user_123",
   "agent.principal.initiator.id": "user_123",
+  "agent.approval.responder.id": "user_123",
+  "agent.tool.approver.id": "user_123",
   "gen_ai.memory.store.id": '["user","vercel-oidc",null,"user_123"]',
   "ai.settings.context.posthog_distinct_id": "user_123",
 };

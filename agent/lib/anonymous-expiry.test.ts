@@ -253,7 +253,7 @@ describe("onAnonymousTurnEnded", () => {
     const upstash = stubUpstash(keyspace);
 
     await onAnonymousTurnEnded(
-      { type: "turn.completed" },
+      { type: "turn.settled" },
       session("session-b", { current: anonymous, initiator: anonymous }),
     );
 
@@ -273,7 +273,7 @@ describe("onAnonymousTurnEnded", () => {
 
     await expect(
       onAnonymousTurnEnded(
-        { type: "turn.failed" },
+        { type: "turn.settled" },
         session("session-a", { current: anonymous, initiator: anonymous }),
       ),
     ).resolves.toBeUndefined();
