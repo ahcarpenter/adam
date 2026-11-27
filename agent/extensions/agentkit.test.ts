@@ -37,28 +37,35 @@ const commands: string[][] = [];
 /** The keys the stubbed database holds, for the one command that lists keys. */
 let stored: string[] = [];
 
-const base64 = (value: string) => Buffer.from(value).toString("base64");
-
 beforeAll(async () => {
   for (const [key, value] of Object.entries(validEnv)) vi.stubEnv(key, value);
   // Answers as an empty database: no document at any key, no search hits.
-  vi.stubGlobal("fetch", async (_url: unknown, init: { body: string }) => {
-    const answer = (command: string[]) => {
-      commands.push(command);
-      if (String(command[0]).toUpperCase() === "SCAN") {
-        const prefix = String(command[3]).replace(/\*$/, "");
-        const found = stored.filter((key) => key.startsWith(prefix));
-        return { result: [base64("0"), found.map(base64)] };
-      }
-      return { result: command[0] === "SEARCH.QUERY" ? [] : null };
-    };
-    const body = JSON.parse(init.body) as string[] | string[][];
-    return Response.json(
-      Array.isArray(body[0])
-        ? (body as string[][]).map(answer)
-        : answer(body as string[]),
-    );
-  });
+  // Like Upstash, it answers in base64 only when the request asks for it
+  // with `Upstash-Encoding: base64`; the client decides whether to ask.
+  vi.stubGlobal(
+    "fetch",
+    async (_url: unknown, init: { body: string; headers?: HeadersInit }) => {
+      const encode =
+        new Headers(init.headers).get("Upstash-Encoding") === "base64"
+          ? (value: string) => Buffer.from(value).toString("base64")
+          : (value: string) => value;
+      const answer = (command: string[]) => {
+        commands.push(command);
+        if (String(command[0]).toUpperCase() === "SCAN") {
+          const prefix = String(command[3]).replace(/\*$/, "");
+          const found = stored.filter((key) => key.startsWith(prefix));
+          return { result: [encode("0"), found.map(encode)] };
+        }
+        return { result: command[0] === "SEARCH.QUERY" ? [] : null };
+      };
+      const body = JSON.parse(init.body) as string[] | string[][];
+      return Response.json(
+        Array.isArray(body[0])
+          ? (body as string[][]).map(answer)
+          : answer(body as string[]),
+      );
+    },
+  );
   ambient[configScope] = "agentkit";
   await import("./agentkit");
   tools = (await import(
