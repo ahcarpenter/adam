@@ -1,4 +1,5 @@
-import type { HookContext, HookEvent } from "eve/hooks";
+import { emptySessionView, foldEvents, type SessionView } from "eve/events";
+import type { HookContext, HookEvent, HookEventType } from "eve/hooks";
 import { describe, expect, it, vi } from "vitest";
 import TransportStream from "winston-transport";
 
@@ -48,53 +49,63 @@ async function load() {
   };
 }
 
-// The handlers read only session.id and channel.kind off the hook context.
-function context(sessionId = "sess_1", kind?: string): HookContext {
+// The handlers read session.id, channel.kind, now and view off the hook
+// context.
+function context(
+  input: {
+    sessionId?: string;
+    kind?: string;
+    at?: string;
+    view?: SessionView;
+  } = {},
+): HookContext {
   return {
     agent: { name: "adam" },
-    channel: { kind },
-    session: { id: sessionId },
+    channel: { kind: input.kind },
+    session: { id: input.sessionId ?? "sess_1" },
+    now: new Date(input.at ?? "2026-08-12T10:00:00.000Z"),
+    view: input.view ?? emptySessionView(),
   } as unknown as HookContext;
 }
 
-function event<TEvent>(
-  type: string,
+function event<K extends HookEventType>(
+  type: K,
   data: Record<string, unknown>,
-  at = "2026-08-12T10:00:00.000Z",
-): TEvent {
-  return { type, data, meta: { at, id: `evt_${type}` } } as unknown as TEvent;
+  scope?: Record<string, string>,
+): HookEvent<K> {
+  return { type, data, scope } as unknown as HookEvent<K>;
 }
 
-const turnStarted = (at: string) =>
-  event<HookEvent<"turn.started">>(
-    "turn.started",
-    { sequence: 0, turnId: "turn_0" },
-    at,
-  );
+const turnStarted = () =>
+  event("turn.started", {
+    cause: { deliveryId: "dlv_0" },
+    follows: null,
+    turnId: "turn_0",
+  });
 
-const turnCompleted = (at: string) =>
-  event<HookEvent<"turn.completed">>(
-    "turn.completed",
-    { sequence: 1, turnId: "turn_0" },
-    at,
-  );
+const turnSettled = (outcome: string, error?: Record<string, unknown>) =>
+  event("turn.settled", { error, outcome, turnId: "turn_0" });
 
 describe("observability handlers", () => {
   describe("turn duration", () => {
-    it("measures a completed turn from the durable envelope", async () => {
-      const { onTurnStarted, onTurnCompleted, recordTurn, logged } =
-        await load();
-      const ctx = context("sess_1", "channel:eve");
-      onTurnStarted(turnStarted("2026-08-12T10:00:00.000Z"), ctx);
-      onTurnCompleted(turnCompleted("2026-08-12T10:00:03.500Z"), ctx);
+    it("measures a completed turn from the times eve recorded", async () => {
+      const { onTurnStarted, onTurnSettled, recordTurn, logged } = await load();
+      onTurnStarted(
+        turnStarted(),
+        context({ kind: "channel:eve", at: "2026-08-12T10:00:00.000Z" }),
+      );
+      onTurnSettled(
+        turnSettled("completed"),
+        context({ kind: "channel:eve", at: "2026-08-12T10:00:03.500Z" }),
+      );
 
       expect(recordTurn).toHaveBeenCalledWith("completed", "channel:eve", 3.5);
       expect(logged.records).toHaveLength(0);
     });
 
     it("still counts a turn whose start this process never saw", async () => {
-      const { onTurnCompleted, recordTurn } = await load();
-      onTurnCompleted(turnCompleted("2026-08-12T10:00:03.500Z"), context());
+      const { onTurnSettled, recordTurn } = await load();
+      onTurnSettled(turnSettled("completed"), context());
 
       expect(recordTurn).toHaveBeenCalledWith(
         "completed",
@@ -104,11 +115,16 @@ describe("observability handlers", () => {
     });
 
     it("does not reuse a start across turns", async () => {
-      const { onTurnStarted, onTurnCompleted, recordTurn } = await load();
-      const ctx = context();
-      onTurnStarted(turnStarted("2026-08-12T10:00:00.000Z"), ctx);
-      onTurnCompleted(turnCompleted("2026-08-12T10:00:01.000Z"), ctx);
-      onTurnCompleted(turnCompleted("2026-08-12T10:00:09.000Z"), ctx);
+      const { onTurnStarted, onTurnSettled, recordTurn } = await load();
+      onTurnStarted(turnStarted(), context({ at: "2026-08-12T10:00:00.000Z" }));
+      onTurnSettled(
+        turnSettled("completed"),
+        context({ at: "2026-08-12T10:00:01.000Z" }),
+      );
+      onTurnSettled(
+        turnSettled("completed"),
+        context({ at: "2026-08-12T10:00:09.000Z" }),
+      );
 
       expect(recordTurn).toHaveBeenNthCalledWith(1, "completed", "unknown", 1);
       expect(recordTurn).toHaveBeenNthCalledWith(
@@ -120,11 +136,11 @@ describe("observability handlers", () => {
     });
 
     it("keys starts per session, not per turn id", async () => {
-      const { onTurnStarted, onTurnCompleted, recordTurn } = await load();
-      onTurnStarted(turnStarted("2026-08-12T10:00:00.000Z"), context("sess_a"));
-      onTurnCompleted(
-        turnCompleted("2026-08-12T10:00:05.000Z"),
-        context("sess_b"),
+      const { onTurnStarted, onTurnSettled, recordTurn } = await load();
+      onTurnStarted(turnStarted(), context({ sessionId: "sess_a" }));
+      onTurnSettled(
+        turnSettled("completed"),
+        context({ sessionId: "sess_b", at: "2026-08-12T10:00:05.000Z" }),
       );
 
       expect(recordTurn).toHaveBeenCalledWith(
@@ -134,11 +150,13 @@ describe("observability handlers", () => {
       );
     });
 
-    it("ignores an unparseable start timestamp", async () => {
-      const { onTurnStarted, onTurnCompleted, recordTurn } = await load();
-      const ctx = context();
-      onTurnStarted(turnStarted("not-a-timestamp"), ctx);
-      onTurnCompleted(turnCompleted("2026-08-12T10:00:01.000Z"), ctx);
+    it("ignores an invalid start time", async () => {
+      const { onTurnStarted, onTurnSettled, recordTurn } = await load();
+      onTurnStarted(turnStarted(), context({ at: "not-a-timestamp" }));
+      onTurnSettled(
+        turnSettled("completed"),
+        context({ at: "2026-08-12T10:00:01.000Z" }),
+      );
 
       expect(recordTurn).toHaveBeenCalledWith(
         "completed",
@@ -147,11 +165,13 @@ describe("observability handlers", () => {
       );
     });
 
-    it("ignores an unparseable end timestamp", async () => {
-      const { onTurnStarted, onTurnCompleted, recordTurn } = await load();
-      const ctx = context();
-      onTurnStarted(turnStarted("2026-08-12T10:00:00.000Z"), ctx);
-      onTurnCompleted(turnCompleted("not-a-timestamp"), ctx);
+    it("ignores an invalid end time", async () => {
+      const { onTurnStarted, onTurnSettled, recordTurn } = await load();
+      onTurnStarted(turnStarted(), context({ at: "2026-08-12T10:00:00.000Z" }));
+      onTurnSettled(
+        turnSettled("completed"),
+        context({ at: "not-a-timestamp" }),
+      );
 
       expect(recordTurn).toHaveBeenCalledWith(
         "completed",
@@ -161,22 +181,23 @@ describe("observability handlers", () => {
     });
 
     it("counts a cancelled turn and releases its start", async () => {
-      const { onTurnStarted, onTurnCancelled, onTurnCompleted, recordTurn } =
-        await load();
-      const ctx = context("sess_1", "channel:eve");
-      onTurnStarted(turnStarted("2026-08-12T10:00:00.000Z"), ctx);
-      onTurnCancelled(
-        event<HookEvent<"turn.cancelled">>(
-          "turn.cancelled",
-          { sequence: 1, turnId: "turn_0" },
-          "2026-08-12T10:00:02.000Z",
-        ),
-        ctx,
+      const { onTurnStarted, onTurnSettled, recordTurn, logged } = await load();
+      onTurnStarted(
+        turnStarted(),
+        context({ kind: "channel:eve", at: "2026-08-12T10:00:00.000Z" }),
+      );
+      onTurnSettled(
+        turnSettled("cancelled"),
+        context({ kind: "channel:eve", at: "2026-08-12T10:00:02.000Z" }),
       );
 
       expect(recordTurn).toHaveBeenCalledWith("cancelled", "channel:eve", 2);
+      expect(logged.records).toHaveLength(0);
       // Released, so a later turn cannot inherit the entry.
-      onTurnCompleted(turnCompleted("2026-08-12T10:00:30.000Z"), ctx);
+      onTurnSettled(
+        turnSettled("completed"),
+        context({ kind: "channel:eve", at: "2026-08-12T10:00:30.000Z" }),
+      );
       expect(recordTurn).toHaveBeenLastCalledWith(
         "completed",
         "channel:eve",
@@ -185,16 +206,15 @@ describe("observability handlers", () => {
     });
 
     it("evicts the oldest start once the tracking cap is reached", async () => {
-      const { onTurnStarted, onTurnCompleted, recordTurn } = await load();
-      const first = context("sess_first");
-      onTurnStarted(turnStarted("2026-08-12T10:00:00.000Z"), first);
+      const { onTurnStarted, onTurnSettled, recordTurn } = await load();
+      onTurnStarted(turnStarted(), context({ sessionId: "sess_first" }));
       for (let i = 0; i < 1_000; i += 1) {
-        onTurnStarted(
-          turnStarted("2026-08-12T10:00:00.000Z"),
-          context(`s${i}`),
-        );
+        onTurnStarted(turnStarted(), context({ sessionId: `s${i}` }));
       }
-      onTurnCompleted(turnCompleted("2026-08-12T10:00:04.000Z"), first);
+      onTurnSettled(
+        turnSettled("completed"),
+        context({ sessionId: "sess_first", at: "2026-08-12T10:00:04.000Z" }),
+      );
 
       expect(recordTurn).toHaveBeenCalledWith(
         "completed",
@@ -205,16 +225,14 @@ describe("observability handlers", () => {
   });
 
   it("logs and counts a failed turn", async () => {
-    const { onTurnFailed, recordTurn, lastRecord } = await load();
-    onTurnFailed(
-      event<HookEvent<"turn.failed">>("turn.failed", {
+    const { onTurnSettled, recordTurn, lastRecord } = await load();
+    onTurnSettled(
+      turnSettled("failed", {
         code: "model_error",
-        details: { provider: "openai", status: 503 },
+        id: "err_1",
         message: "provider refused",
-        sequence: 2,
-        turnId: "turn_0",
       }),
-      context("sess_1", "channel:eve"),
+      context({ kind: "channel:eve" }),
     );
 
     expect(recordTurn).toHaveBeenCalledWith("failed", "channel:eve", undefined);
@@ -227,46 +245,88 @@ describe("observability handlers", () => {
       channelKind: "channel:eve",
       code: "model_error",
       reason: "provider refused",
-      details: { provider: "openai", status: 503 },
+      errorId: "err_1",
     });
   });
 
-  it("warns on a step failure without counting a turn", async () => {
-    const { onStepFailed, recordTurn, lastRecord } = await load();
-    onStepFailed(
-      event<HookEvent<"step.failed">>("step.failed", {
-        code: "timeout",
-        details: { attempt: 2 },
-        message: "model call timed out",
-        sequence: 1,
-        stepIndex: 2,
-        turnId: "turn_0",
-      }),
+  it("warns on a model attempt eve retries, without counting a turn", async () => {
+    const { onModelRetried, recordTurn, lastRecord } = await load();
+    onModelRetried(
+      event(
+        "model.retried",
+        {
+          attempt: 1,
+          error: { code: "timeout", id: "err_2", message: "timed out" },
+          runId: "run_0",
+        },
+        { runId: "run_0", turnId: "turn_0" },
+      ),
       context(),
     );
 
     expect(recordTurn).not.toHaveBeenCalled();
     expect(lastRecord()).toMatchObject({
       level: "warn",
-      message: "model step failed",
-      event: "step_failed",
+      message: "model attempt failed",
+      event: "model_attempt_failed",
       sessionId: "sess_1",
       turnId: "turn_0",
-      stepIndex: 2,
+      runId: "run_0",
+      attempt: 1,
       code: "timeout",
-      reason: "model call timed out",
-      details: { attempt: 2 },
+      reason: "timed out",
+      errorId: "err_2",
     });
   });
 
+  it("warns on a model run that gave up", async () => {
+    const { onModelSettled, recordTurn, lastRecord } = await load();
+    onModelSettled(
+      event(
+        "model.settled",
+        {
+          error: { code: "provider_error", id: "err_3", message: "refused" },
+          outcome: "failed",
+          runId: "run_0",
+        },
+        { runId: "run_0", turnId: "turn_0" },
+      ),
+      context(),
+    );
+
+    expect(recordTurn).not.toHaveBeenCalled();
+    expect(lastRecord()).toMatchObject({
+      level: "warn",
+      message: "model run failed",
+      event: "model_failed",
+      sessionId: "sess_1",
+      turnId: "turn_0",
+      runId: "run_0",
+      code: "provider_error",
+      reason: "refused",
+      errorId: "err_3",
+    });
+  });
+
+  it("logs nothing for a model run that did not fail", async () => {
+    const { onModelSettled, logged } = await load();
+    for (const outcome of ["completed", "interrupted", "abandoned"]) {
+      onModelSettled(
+        event("model.settled", { outcome, runId: "run_0" }),
+        context(),
+      );
+    }
+
+    expect(logged.records).toHaveLength(0);
+  });
+
   it("logs a failed session", async () => {
-    const { onSessionFailed, lastRecord } = await load();
-    onSessionFailed(
-      event<HookEvent<"session.failed">>("session.failed", {
-        code: "unrecoverable",
-        details: { turnId: "turn_0" },
-        message: "turn cascade",
-        sessionId: "sess_1",
+    const { onSessionEnded, lastRecord } = await load();
+    onSessionEnded(
+      event("session.ended", {
+        cause: { turnId: "turn_0" },
+        error: { code: "unrecoverable", message: "turn cascade" },
+        outcome: "failed",
       }),
       context(),
     );
@@ -279,14 +339,20 @@ describe("observability handlers", () => {
       channelKind: "unknown",
       code: "unrecoverable",
       reason: "turn cascade",
-      details: { turnId: "turn_0" },
     });
   });
 
+  it("logs nothing for a session that ends normally", async () => {
+    const { onSessionEnded, logged } = await load();
+    onSessionEnded(event("session.ended", { outcome: "completed" }), context());
+
+    expect(logged.records).toHaveLength(0);
+  });
+
   it("contains a telemetry failure inside the handler", async () => {
-    // Since eve 0.68 a thrown hook is logged, the remaining subscribers run
-    // and the turn and session continue, so neverThrow is a precaution here.
-    const { onTurnFailed, recordTurn, diag } = await load();
+    // A hook that throws fails the running turn, so neverThrow is what keeps
+    // a failing meter from ending the turn it describes.
+    const { onTurnSettled, recordTurn, diag } = await load();
     const diagError = vi
       .spyOn(diag, "error")
       .mockImplementation(() => undefined);
@@ -295,13 +361,8 @@ describe("observability handlers", () => {
     });
 
     expect(() =>
-      onTurnFailed(
-        event<HookEvent<"turn.failed">>("turn.failed", {
-          code: "model_error",
-          message: "provider refused",
-          sequence: 2,
-          turnId: "turn_0",
-        }),
+      onTurnSettled(
+        turnSettled("failed", { code: "model_error", message: "refused" }),
         context(),
       ),
     ).not.toThrow();
@@ -310,27 +371,42 @@ describe("observability handlers", () => {
   });
 
   describe("tool calls", () => {
-    const toolResult = (
-      status: string,
-      error?: { code: string; message: string },
-    ) =>
-      event<HookEvent<"action.result">>("action.result", {
-        error,
-        result: {
+    /**
+     * A session view in which the model requested one tool call and one
+     * subagent call, folded by eve itself, as eve hands a hook its view.
+     */
+    function requested(): SessionView {
+      const at = "2026-08-12T10:00:00.000Z";
+      const requests = [
+        {
           callId: "call_1",
-          kind: "tool-result",
-          output: {},
-          toolName: "agentkit__recall_memory",
+          capability: { kind: "tool", name: "agentkit__recall_memory" },
         },
-        sequence: 0,
-        status,
-        stepIndex: 0,
-        turnId: "turn_0",
-      });
+        { callId: "call_2", capability: { kind: "agent", name: "researcher" } },
+      ];
+      return foldEvents(
+        emptySessionView(),
+        requests.map(({ callId, capability }, index) => ({
+          type: "call.requested",
+          data: { callId, capability, input: {}, owner: { turnId: "turn_0" } },
+          scope: { turnId: "turn_0" },
+          meta: { at, position: { line: 0, index } },
+        })),
+      );
+    }
+
+    const settled = (
+      callId: string,
+      outcome: string,
+      error?: { code: string; message: string },
+    ) => event("call.settled", { callId, error, outcome });
 
     it("counts a successful call without logging", async () => {
-      const { onActionResult, recordToolCall, logged } = await load();
-      onActionResult(toolResult("completed"), context());
+      const { onCallSettled, recordToolCall, logged } = await load();
+      onCallSettled(
+        settled("call_1", "completed"),
+        context({ view: requested() }),
+      );
 
       expect(recordToolCall).toHaveBeenCalledWith(
         "agentkit__recall_memory",
@@ -340,10 +416,13 @@ describe("observability handlers", () => {
     });
 
     it("counts and logs a failed call", async () => {
-      const { onActionResult, recordToolCall, lastRecord } = await load();
-      onActionResult(
-        toolResult("failed", { code: "redis_error", message: "no connection" }),
-        context(),
+      const { onCallSettled, recordToolCall, lastRecord } = await load();
+      onCallSettled(
+        settled("call_1", "failed", {
+          code: "redis_error",
+          message: "no connection",
+        }),
+        context({ view: requested() }),
       );
 
       expect(recordToolCall).toHaveBeenCalledWith(
@@ -363,27 +442,22 @@ describe("observability handlers", () => {
       });
     });
 
-    it("ignores results that are not tool calls", async () => {
-      const { onActionResult, recordToolCall, logged } = await load();
-      onActionResult(
-        event<HookEvent<"action.result">>("action.result", {
-          result: {
-            callId: "call_1",
-            kind: "subagent-result",
-            origin: "child",
-            output: {},
-            subagentName: "researcher",
-          },
-          sequence: 0,
-          status: "completed",
-          stepIndex: 0,
-          turnId: "turn_0",
-        }),
-        context(),
+    it("ignores calls that are not tool calls", async () => {
+      const { onCallSettled, recordToolCall, logged } = await load();
+      onCallSettled(
+        settled("call_2", "completed"),
+        context({ view: requested() }),
       );
 
       expect(recordToolCall).not.toHaveBeenCalled();
       expect(logged.records).toHaveLength(0);
+    });
+
+    it("ignores a call the view does not hold", async () => {
+      const { onCallSettled, recordToolCall } = await load();
+      onCallSettled(settled("call_9", "failed"), context());
+
+      expect(recordToolCall).not.toHaveBeenCalled();
     });
   });
 });

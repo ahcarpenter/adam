@@ -1,4 +1,4 @@
-import type { SessionContext } from "eve/tools";
+import type { SessionInfo } from "eve/context";
 import { identifiedCaller } from "./caller";
 
 /**
@@ -27,7 +27,7 @@ import { identifiedCaller } from "./caller";
  * is the single `local-dev` principal.
  */
 export function agentkitUserId(ctx: {
-  session: Pick<SessionContext["session"], "id" | "auth">;
+  session: Pick<SessionInfo, "id" | "auth">;
 }): string {
   const { id, auth } = ctx.session;
   return identifiedCaller(auth)?.principalId ?? id;

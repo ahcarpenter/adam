@@ -22,7 +22,13 @@ const configScope = Symbol.for("eve.ext-config-scope");
 const ambient = globalThis as Record<symbol, unknown>;
 
 type Tool = { execute(input: unknown, ctx: unknown): Promise<unknown> };
-type DynamicTool = { events: { "session.started"(): Tool | null } };
+
+// The chat-history tools are defineDynamic() definitions, which eve resolves
+// before each model call. eve keeps the resolver under this registered
+// symbol, so that separately bundled copies of eve can read each other's
+// definitions; calling it is what eve does.
+const resolver: unique symbol = Symbol.for("eve.dynamic");
+type DynamicTool = { [resolver](ctx: unknown): Tool | null };
 
 let tools: {
   save_memory: Tool;
@@ -96,8 +102,8 @@ function session(id: string, caller: typeof anonymous) {
   return { session: { id, auth: { current: caller, initiator: caller } } };
 }
 
-function historyTool(tool: DynamicTool): Tool {
-  const resolved = tool.events["session.started"]();
+function historyTool(tool: DynamicTool, ctx: unknown): Tool {
+  const resolved = tool[resolver](ctx);
   if (!resolved) throw new Error("the mount did not enable chat history");
   return resolved;
 }
@@ -111,31 +117,51 @@ async function visit(ctx: ReturnType<typeof session>) {
   const from = commands.length;
   await tools.save_memory.execute({ text: "prefers oolong" }, ctx);
   await tools.recall_memory.execute({ query: "tea" }, ctx);
-  await historyTool(tools.read_chat_history).execute(
+  await historyTool(tools.read_chat_history, ctx).execute(
     { sessionId: ctx.session.id },
     ctx,
   );
-  await historyTool(tools.search_chat_history).execute({ query: "tea" }, ctx);
+  await historyTool(tools.search_chat_history, ctx).execute(
+    { query: "tea" },
+    ctx,
+  );
   return commands.slice(from);
 }
 
+/** A document key, which carries its user as `agentkit:<store>:<userId>:<id>`. */
+const documentKey = /^agentkit:(memory|chat):([^:]+):/;
+
 /**
- * The user ids a set of commands reads or writes under, per store. A
- * document key carries its user as `agentkit:<store>:<userId>:<id>`, and a
- * search carries it as an exact-match `userId` filter on the store's index.
+ * The searches a set of commands ran, with the store each searched and the
+ * user its exact-match `userId` filter names. Memory and chat history share
+ * one index, `agentkit`; a chat document is the one with a session id, so a
+ * memory search excludes documents that have one.
+ */
+function searchesOf(sent: string[][]) {
+  return sent
+    .filter(([name, index]) => name === "SEARCH.QUERY" && index === "agentkit")
+    .map(([, , query]) => ({
+      store: /"\$mustNot":\[\{"sessionId"/.test(String(query))
+        ? "memory"
+        : "chat",
+      userId: /"userId":\{"\$eq":"([^"]+)"\}/.exec(String(query))?.[1],
+    }));
+}
+
+/**
+ * The user ids a set of commands reads or writes under, per store: from the
+ * document keys it names and the user filters of its searches.
  */
 function userIdsOf(sent: string[][]) {
   const ids = { memory: new Set<string>(), chat: new Set<string>() };
   for (const command of sent) {
     for (const arg of command.map(String)) {
-      const key = /^agentkit:(memory|chat):([^:]+):/.exec(arg);
+      const key = documentKey.exec(arg);
       if (key) ids[key[1] as keyof typeof ids].add(key[2] as string);
     }
-    const index = /^agentkit_(memory|chat)$/.exec(String(command[1]));
-    const filter = /"userId":\{"\$eq":"([^"]+)"\}/.exec(String(command[2]));
-    if (index && filter) {
-      ids[index[1] as keyof typeof ids].add(filter[1] as string);
-    }
+  }
+  for (const { store, userId } of searchesOf(sent)) {
+    ids[store as keyof typeof ids].add(String(userId));
   }
   return ids;
 }
@@ -153,6 +179,15 @@ describe("agentkit extension user keys", () => {
       memory: new Set(["session-b"]),
       chat: new Set(["session-b"]),
     });
+    // Both searches ran, each filtered to its own session.
+    expect(searchesOf(first)).toEqual([
+      { store: "memory", userId: "session-a" },
+      { store: "chat", userId: "session-a" },
+    ]);
+    expect(searchesOf(second)).toEqual([
+      { store: "memory", userId: "session-b" },
+      { store: "chat", userId: "session-b" },
+    ]);
     // The id every anonymous caller shares never reaches the store.
     expect(JSON.stringify([first, second])).not.toContain("anonymous");
   });
@@ -204,7 +239,7 @@ describe("agentkit extension user keys", () => {
         sent
           .flat()
           .map(String)
-          .filter((arg) => /^agentkit:(memory|chat):/.test(arg)),
+          .filter((arg) => documentKey.test(arg)),
       ),
     ];
     expect(stored).toEqual([

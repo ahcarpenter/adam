@@ -115,6 +115,11 @@ function stubUpstash() {
 
 const origin = "https://adam.example";
 
+// Where `eve dev` serves the agent. On a development server localDev()
+// refuses a request addressed to any host that is not loopback or this
+// machine, so the dev-server cases call it here.
+const devOrigin = "http://127.0.0.1:2000";
+
 function createSession(address = "203.0.113.7", token?: string) {
   return new Request(`${origin}/eve/v1/session`, {
     method: "POST",
@@ -199,7 +204,7 @@ describe("eve channel access", () => {
         const { auth } = await loadChannel(setting, "eve dev");
 
         await expect(
-          routeAuth(new Request(`${origin}/eve/v1/info`), auth),
+          routeAuth(new Request(`${devOrigin}/eve/v1/info`), auth),
         ).resolves.toMatchObject({ principalId: "local-dev" });
       });
     },
@@ -225,7 +230,7 @@ describe("eve channel access", () => {
       const { auth } = await loadChannel("true", "eve dev");
 
       await expect(
-        routeAuth(new Request(`${origin}/eve/v1/info`), auth),
+        routeAuth(new Request(`${devOrigin}/eve/v1/info`), auth),
       ).resolves.toMatchObject({ principalId: "local-dev" });
     });
 
@@ -361,7 +366,7 @@ describe("eve channel access", () => {
         const { auth } = await loadChannel(setting, "eve dev", clientId);
 
         await expect(
-          routeAuth(new Request(`${origin}/eve/v1/info`), auth),
+          routeAuth(new Request(`${devOrigin}/eve/v1/info`), auth),
         ).resolves.toMatchObject({ principalId: "local-dev" });
       });
     },

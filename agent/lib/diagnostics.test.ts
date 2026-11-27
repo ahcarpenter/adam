@@ -19,12 +19,12 @@ describe("neverThrow", () => {
     vi.spyOn(diag, "error").mockImplementation(() => undefined);
 
     expect(() =>
-      neverThrow("turn.failed instrumentation", () => {
+      neverThrow("turn.settled instrumentation", () => {
         throw error;
       }),
     ).not.toThrow();
     expect(diag.error).toHaveBeenCalledWith(
-      "turn.failed instrumentation failed",
+      "turn.settled instrumentation failed",
       error,
     );
   });

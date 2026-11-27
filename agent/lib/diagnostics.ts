@@ -22,11 +22,9 @@ export function ensureOtelDiagnostics(): void {
 /**
  * Contains a telemetry failure so it cannot become the incident.
  *
- * Since eve 0.68 a thrown hook handler no longer fails the turn or the
- * session: eve logs it, runs the remaining subscribers and continues. In the
- * hooks this is now a precaution: a logging or metric call that fails must
- * not end a user's session. It is still load-bearing inside the auth walk,
- * where a throw would replace the limiter's 403 with a 500.
+ * A hook handler that throws fails the running turn, so in the hooks this is
+ * what keeps a logging or metric call that fails from ending a user's turn.
+ * Inside the auth walk a throw would replace the limiter's 403 with a 500.
  *
  * Reported through `diag` (console) rather than winston — winston is one of
  * the things that can be failing here.

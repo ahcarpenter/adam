@@ -23,7 +23,7 @@ function escapeGlob(value: string): string {
  * of every turn, which makes the 24 hours count from the session's last
  * turn.
  *
- * AgentKit 0.13 cannot do this itself: its memory has no expiry option, and
+ * AgentKit 0.20 cannot do this itself: its memory has no expiry option, and
  * its chat-history `ttlSeconds` is one value for the whole deployment, which
  * would expire signed-in callers' history too.
  *

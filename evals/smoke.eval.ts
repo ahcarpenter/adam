@@ -7,7 +7,7 @@ export default defineEval({
     const turn = await t.send("Hello! Introduce yourself in one sentence.");
     t.succeeded();
     t.check(
-      turn.message,
+      turn.reply,
       satisfies<string | undefined>(
         (reply) => (reply ?? "").trim().length > 0,
         "non-empty reply",

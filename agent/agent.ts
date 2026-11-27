@@ -14,17 +14,17 @@ export default defineAgent({
   model: env.AI_GATEWAY_MODEL,
   // An anonymous caller must not reach eve's default tools: the sandbox
   // shell and files, web fetch, web search and the sub-agent. A deployment
-  // that admits anonymous callers is therefore built without them, and four
+  // that admits anonymous callers is therefore built without them, and five
   // come back for callers who have an identity: agent/tools/bash.ts,
-  // read_file.ts, write_file.ts and web_fetch.ts then export a resolver eve
-  // runs at the start of every turn, which offers the tool to an identified
-  // caller and nothing to an anonymous one (agent/lib/caller.ts). On a
-  // closed deployment those four files export eve's own tool unchanged.
-  // Web search, the sub-agent tool and task_cancel cannot be decided per
-  // caller: eve fixes them when the agent is built, so on an open deployment
-  // they are off for everyone, signed-in callers included. load_skill is off
-  // there too, since adam ships no skills for it to load.
-  // The four files read the same setting as this one, and eve refuses every
+  // read_file.ts, write_file.ts, edit_file.ts and web_fetch.ts then export a
+  // resolver eve runs before every model call, which offers the tool to an
+  // identified caller and nothing to an anonymous one (agent/lib/caller.ts).
+  // On a closed deployment those five files export eve's own tool unchanged.
+  // Web search and the sub-agent tool, with its eve__task_wait and
+  // eve__task_cancel, cannot be decided per caller: eve fixes them when the
+  // agent is built, so on an open deployment they are off for everyone,
+  // signed-in callers included.
+  // The five files read the same setting as this one, and eve refuses every
   // request if they disagree with the build: an agent built with one value
   // and started with the other answers 500 rather than serving tools the
   // build did not intend.

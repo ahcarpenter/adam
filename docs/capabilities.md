@@ -20,8 +20,8 @@
 ## Adding tools
 
 A tool file in `agent/tools/` may import shared _authored_ helpers from
-`agent/lib/` (import-only slot): the four files there do, and
-`agent/caller-tools.test.ts` pins that it works in a built and started agent
-under eve 0.68. Those four are eve's own shell, file and web-fetch tools,
+`agent/lib/` (import-only slot): the five files there do, and
+`agent/caller-tools.test.ts` pins that it works in a built and started agent.
+Those five are eve's own shell, file and web-fetch tools,
 offered per caller on a deployment open to anonymous callers; see
 [Anonymous access](configuration.md#anonymous-access).

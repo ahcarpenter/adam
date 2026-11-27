@@ -35,17 +35,17 @@ async function resolvedTools(setting: Setting): Promise<string[]> {
 }
 
 // Every tool eve adds to an agent that does not ask for it: the sandbox
-// shell and files, web fetch, web search, the sub-agent, and the two that
-// only serve those.
+// shell and files, web fetch, web search and the sub-agent. The sub-agent's
+// task tools (eve__task_wait, eve__task_cancel) come and go with it, and
+// `eve info` does not list them.
 const defaultTools = [
   "bash",
   "read_file",
   "write_file",
+  "edit_file",
   "web_fetch",
   "web_search",
   "agent",
-  "task_cancel",
-  "load_skill",
 ];
 
 describe("agent tool set", () => {
@@ -68,7 +68,7 @@ describe("agent tool set", () => {
 
   describe("with ALLOW_ANONYMOUS_ACCESS=true", () => {
     // None is compiled in for every caller. The shell, file and web-fetch
-    // tools come back at run time for callers with an identity.
+    // tools come back before each model call for callers with an identity.
     it.each(defaultTools)("offers no %s tool", (tool) => {
       expect(tools.get("true")).not.toContain(tool);
     });
@@ -76,8 +76,9 @@ describe("agent tool set", () => {
     // Only eve's defaults go. Everything the AgentKit extension contributes
     // stays on purpose: memory, chat history, and document search (search,
     // search_aggregate, search_count), which a retrieval demo needs. The
-    // history and search tools resolve per session, so `eve info` lists the
-    // memory tools only; removing a default must not take any of the rest.
+    // history and search tools are resolved before each model call, so
+    // `eve info` lists the memory tools only; removing a default must not
+    // take any of the rest.
     it("keeps every tool that is not an eve default, document search included on purpose", () => {
       const open = tools.get("true");
 

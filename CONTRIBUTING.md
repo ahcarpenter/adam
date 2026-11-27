@@ -55,13 +55,12 @@ pnpm test:coverage                 # vitest, 95% thresholds
 
 `pnpm lint` and `pnpm format` are the auto-fixing variants of the first two.
 
-`pnpm build` also prepares the agent's sandbox, as eve 0.68 does on every build. Off
-Vercel, eve picks Docker when the Docker daemon answers within about 5 seconds, and
-otherwise falls back to microsandbox (Apple Silicon macOS, or Linux with KVM) or else
-just-bash, neither of which adam installs, so the build fails.
-Either have Docker running, or run `pnpm build --skip-sandbox-prewarm` for a
-compile-only check, which is what CI runs. Do not deploy output built that way: it may
-not be able to start its sandbox.
+`pnpm build` also prepares the agent's sandbox, as eve does on every build, and records
+which provider the built agent uses. Off Vercel, that is Docker when the Docker daemon
+answers within about 5 seconds; without it the build still succeeds, but the built agent
+has no sandbox, and its first sandbox tool call fails asking you to start Docker and
+rebuild. Run `pnpm build --skip-sandbox-prewarm` for a compile-only check, which is what
+CI runs. Do not deploy output built that way: it may not be able to start its sandbox.
 
 See [docs/configuration.md](docs/configuration.md) for the environment variables and
 [docs/observability.md](docs/observability.md) for how the telemetry is wired.

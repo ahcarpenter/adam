@@ -15,7 +15,7 @@
       "matchPackageNames": ["/^@opentelemetry\\//"]
     },
     {
-      "description": "eve and the Upstash AgentKit extension are a matched pair: the extension's _manifest.json declares the contract versions it was built against, and `eve build` fails when the installed eve does not support them. Group them so neither moves alone.",
+      "description": "eve and the Upstash AgentKit extension are a matched pair: the extension's _manifest.json declares the eve release it was built with and its distribution contract, and `eve build` fails when the installed eve is older than that release or does not support that contract. Group them so neither moves alone.",
       "groupName": "eve runtime",
       "matchPackageNames": [
         "eve",

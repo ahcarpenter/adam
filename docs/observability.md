@@ -11,11 +11,14 @@ of them should not be added.
 
 1. **Are turns failing, and why?** — `agent.turns{agent.turn.outcome}` for the
    rate (`completed` / `failed` / `cancelled`), the `turn_failed` log line for
-   the `code`, message, and `details` behind it.
+   the `code`, message, and `errorId` behind it, and `model_failed` and
+   `model_attempt_failed` for the model's own errors, given up on or retried. Quote the `errorId` to find
+   eve's own log line for the failure.
 2. **How slow is a turn?** — `agent.turn.duration`, read at p95/p99. Never
    as an average.
 3. **Are tool calls failing?** — `agent.tool_calls`, keyed by
-   `agent.tool.name` and `agent.tool.status`, plus the `tool_call_failed`
+   `agent.tool.name` and `agent.tool.status` (`completed`, `failed`,
+   `rejected`, `interrupted` or `abandoned`), plus the `tool_call_failed`
    log line.
 4. **Are callers being throttled?** — `agent.rate_limit.rejections` and the
    `rate_limit_rejected` log. This happens in the auth walk before a session
@@ -36,14 +39,12 @@ so no single startup call reaches them all).
   `deployment.environment.name`. Any authored file logs through
   `import winston from "winston"`; records emitted inside a span carry
   trace/span ids, and every line from `agent/lib/observability.ts` carries
-  `sessionId` and a stable `event` name. Failure lines include the event's
-  `details` payload, which is shaped by whatever failed and can carry model
-  input — PostHog Logs is therefore a content store, on the same footing as
-  the traces the trace policy already sends. Every handler runs inside
-  `neverThrow`. Since eve 0.68 a thrown hook no longer fails the turn or the
-  session: eve logs it, runs the remaining subscribers and continues. The
-  wrapper is therefore a precaution, so instrumentation cannot end the
-  session it is describing whatever the runtime does with a throw.
+  `sessionId` and a stable `event` name. Failure lines include eve's error
+  `code`, `message` and `errorId`. The message is written by whatever failed
+  and can quote model input — PostHog Logs is therefore a content store, on
+  the same footing as the traces the trace policy already sends. Every
+  handler runs inside `neverThrow`: a hook that throws fails the turn it runs
+  in, so without it instrumentation could end the turn it is describing.
 - **Metrics** — `ensureMetrics()` registers a meter provider only when
   `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Neither PostHog nor Braintrust
   ingests OTLP metrics, so there is no default destination and the
@@ -60,10 +61,10 @@ so no single startup call reaches them all).
   The trace policy in `otel.ts` states `recordInputs`/`recordOutputs`
   explicitly and turns both on for every environment and audience, where
   eve's default would keep content only in development and for public
-  conversations. eve also caps content to metadata for private and unknown
-  conversations outside development whatever the policy says, so
-  `agent/channels/eve.ts` sets `audience: "public"` (trace capture only; `auth`
-  still controls access). Together, Braintrust, PostHog, and the OTLP
+  conversations; eve honors an explicit policy for every audience. Outside
+  development eve records the caller's principal ids on spans only for
+  public conversations, so `agent/channels/eve.ts` sets `audience: "public"`
+  (tracing only; `auth` still controls access). Together, Braintrust, PostHog, and the OTLP
   collector (when `OTEL_EXPORTER_OTLP_ENDPOINT` is set) receive full message
   history and model output: all three are content stores, and PostHog and
   Braintrust also get the user's principal id. For a user who signed in with
@@ -77,21 +78,17 @@ so no single startup call reaches them all).
   session ids, which Agent Runs groups traces by). Tests pin the policy,
   what each destination receives, and the audience. Turn both off, and drop the audience,
   before pointing this at regulated traffic.
-- **Request spans** - not recorded for now. `traceChannelRequests` is `false`
-  in `otel.ts`, so no route gets the low-cardinality SERVER span (route
-  template and method, never the concrete URL) that `true` would wrap each
-  inbound channel request in. The reason is a fault in eve (seen on 0.68.0,
-  unchanged in 0.69.0): it ends the request span when the handler returns, so
-  on a streamed response the spans started while the body is read belong to a
-  trace whose root has already ended. eve's bundled `@vercel/otel` then ends
-  them early and they end themselves again, which logged
+- **Request spans** - not recorded. `traceChannelRequests` is `false` in
+  `otel.ts`, as is eve's default, so no route gets the low-cardinality SERVER
+  span (route template and method, never the concrete URL) that `true` would
+  wrap each inbound channel request in; only Agent Runs on Vercel and the OTLP
+  collector would receive it (PostHog and Braintrust keep only AI spans).
+  Turn traces, model calls, tool calls, logs and metrics do not depend on it,
+  and Vercel's own request log still records every request. It was first
+  turned off because eve ended a streamed response's spans twice, logging
   `You can only call end() on a span once` at error level on every stream
-  request and recorded a wrong duration. What is lost is the request span
-  itself, which only Agent Runs on Vercel and the OTLP collector ever
-  received (PostHog and Braintrust keep only AI spans). Turn traces, model
-  calls, tool calls, logs and metrics are unaffected, and Vercel's own
-  request log still records every request. Turn it back on once an eve
-  release fixes this; a test pins it off until then.
+  request; eve 0.83.3 fixed that, so turning it on is now only a choice of
+  what those two destinations receive. A test pins the setting.
 
 One deliberate omission: sampling is 100%, which suits this volume — set
 `OTEL_TRACES_SAMPLER` (honored by eve's trace pipeline) when traffic makes that

@@ -1,5 +1,5 @@
 import { defineEvalConfig } from "eve/evals";
-import { Braintrust } from "eve/evals/reporters";
+import { braintrustReporter } from "eve/evals/reporters";
 import { AGENT_NAME } from "#lib/agent-name";
 
 // Every eval in this tree is deterministic (no t.judge.* assertions), so no
@@ -9,5 +9,5 @@ import { AGENT_NAME } from "#lib/agent-name";
 // Requires BRAINTRUST_API_KEY; use `eve eval --skip-report` to iterate
 // locally without uploading an experiment.
 export default defineEvalConfig({
-  reporters: [Braintrust({ projectName: `${AGENT_NAME}-evals` })],
+  reporters: [braintrustReporter({ projectName: `${AGENT_NAME}-evals` })],
 });

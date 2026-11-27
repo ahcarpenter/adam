@@ -7,12 +7,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { Client, ClientError } from "eve/client";
+import type { Delivery } from "eve/sessions";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { validEnv } from "#lib/env.fixtures";
 import { startIssuer } from "#lib/vercel-sign-in.fixtures";
 
-// Which tools a caller is offered is decided inside eve, at the start of
-// each turn, from files eve compiles. So this runs eve itself, built and
+// Which tools a caller is offered is decided inside eve, before every model
+// call, from files eve compiles. So this runs eve itself, built and
 // started as a deployment is: a real server, real HTTP requests, real route
 // auth, and adam's own agent/agent.ts, agent/tools/ and sign-in
 // authenticator. Only two things are stood in for. The model is eve's
@@ -33,8 +34,8 @@ const eve = join(
 );
 const clientId = "cl_adam_test";
 
-// The four of eve's default tools that can be decided per caller.
-const perCaller = ["bash", "read_file", "web_fetch", "write_file"];
+// The five of eve's default tools that can be decided per caller.
+const perCaller = ["bash", "edit_file", "read_file", "web_fetch", "write_file"];
 
 /** An import specifier for one of adam's own files, as source text. */
 const adam = (path: string) => JSON.stringify(join(appRoot, path));
@@ -199,7 +200,7 @@ afterAll(async () => {
 
 function caller(host: string, sub?: string) {
   return new Client({
-    host,
+    baseUrl: host,
     ...(sub
       ? { auth: { bearer: vercel.idToken({ aud: clientId, sub }) } }
       : {}),
@@ -207,36 +208,31 @@ function caller(host: string, sub?: string) {
 }
 
 /** The tools eve offered the model on one turn, as the mock model reports. */
-async function offered(
-  server: Running,
-  response: {
-    result(): Promise<{
-      status: string;
-      message?: string;
-      events: readonly unknown[];
-    }>;
-  },
-): Promise<string[]> {
-  const { status, message, events } = await response.result();
-  // A turn that answered leaves the session "waiting" for its next message.
-  if (status === "failed" || message === undefined) {
+async function offered(server: Running, delivery: Delivery): Promise<string[]> {
+  const result = await delivery.result();
+  if (result.status === "failed" || result.reply === undefined) {
     throw new Error(
-      `the turn ended ${status}:\n${JSON.stringify(events.slice(-3), null, 2)}\n${server.log()}`,
+      `the message ended ${result.status} (${result.outcome}):\n${JSON.stringify(result.error, null, 2)}\n${server.log()}`,
     );
   }
   try {
-    return JSON.parse(message) as string[];
+    return JSON.parse(result.reply) as string[];
   } catch {
     throw new Error(
-      `the model was not adam's mock: ${message}\n${server.log()}`,
+      `the model was not adam's mock: ${result.reply}\n${server.log()}`,
     );
   }
 }
 
 // eve's default tools that stay off for every caller on an open deployment:
-// three that eve fixes when the agent is built, and load_skill, which adam
-// has no skills for.
-const offForEveryone = ["agent", "load_skill", "task_cancel", "web_search"];
+// two that eve fixes when the agent is built, and the sub-agent's task tools,
+// which eve adds only with the sub-agent.
+const offForEveryone = [
+  "agent",
+  "eve__task_cancel",
+  "eve__task_wait",
+  "web_search",
+];
 
 describe("tools per caller, on a deployment open to anonymous callers", () => {
   let open: Running;
@@ -248,10 +244,10 @@ describe("tools per caller, on a deployment open to anonymous callers", () => {
   afterAll(() => open?.stop());
 
   const tools = async (sub?: string) => {
-    const { response } = await caller(open.host, sub).sessions.create({
+    const { delivery } = await caller(open.host, sub).sessions.create({
       message: "hello",
     });
-    return offered(open, response);
+    return offered(open, delivery);
   };
 
   // The AgentKit extension is not mounted in the scratch app, so the list
@@ -276,13 +272,13 @@ describe("tools per caller, on a deployment open to anonymous callers", () => {
   // turn: knowing a signed-in user's session id earns an anonymous caller
   // nothing, and signing in mid-session is enough to get the tools.
   it("decides again on every turn, as the caller of a session changes", async () => {
-    const { session, response } = await caller(
+    const { session, delivery } = await caller(
       open.host,
       "user_1",
     ).sessions.create({ message: "hello" });
-    expect(await offered(open, response)).toEqual(perCaller);
+    expect(await offered(open, delivery)).toEqual(perCaller);
 
-    const anonymous = caller(open.host).sessions.attach(response.sessionId);
+    const anonymous = caller(open.host).sessions.attach(delivery.sessionId);
     expect(await offered(open, await anonymous.send("hello again"))).toEqual(
       [],
     );
@@ -293,13 +289,13 @@ describe("tools per caller, on a deployment open to anonymous callers", () => {
   }, 90_000);
 
   it("offers the tools to a caller who signs in on an anonymous session", async () => {
-    const { response } = await caller(open.host).sessions.create({
+    const { delivery } = await caller(open.host).sessions.create({
       message: "hello",
     });
-    expect(await offered(open, response)).toEqual([]);
+    expect(await offered(open, delivery)).toEqual([]);
 
     const signedIn = caller(open.host, "user_1").sessions.attach(
-      response.sessionId,
+      delivery.sessionId,
     );
     expect(await offered(open, await signedIn.send("hello again"))).toEqual(
       perCaller,
@@ -307,7 +303,11 @@ describe("tools per caller, on a deployment open to anonymous callers", () => {
   }, 90_000);
 
   it("resolves every tool without an error", () => {
-    expect(open.log()).not.toMatch(/Dynamic tool resolver .* failed/);
+    // eve logs a resolver that throws, or that answers differently when it
+    // runs again, under these messages.
+    expect(open.log()).not.toMatch(
+      /Dynamic value ".*" (failed|didn't evaluate|returned something different)/,
+    );
   });
 });
 

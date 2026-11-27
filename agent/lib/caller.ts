@@ -1,6 +1,4 @@
-import type { SessionContext } from "eve/tools";
-
-type SessionAuth = SessionContext["session"]["auth"];
+import type { SessionAuth } from "eve/context";
 
 /**
  * The caller a turn acts for, when that caller has an identity; `null` for

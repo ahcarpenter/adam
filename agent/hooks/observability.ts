@@ -2,12 +2,11 @@ import { defineHook } from "eve/hooks";
 import { ensureLogger } from "#lib/logger";
 import { ensureMetrics } from "#lib/metrics";
 import {
-  onActionResult,
-  onSessionFailed,
-  onStepFailed,
-  onTurnCancelled,
-  onTurnCompleted,
-  onTurnFailed,
+  onCallSettled,
+  onModelRetried,
+  onModelSettled,
+  onSessionEnded,
+  onTurnSettled,
   onTurnStarted,
 } from "#lib/observability";
 
@@ -22,12 +21,11 @@ ensureMetrics();
 // (agent/lib/observed-auth.ts).
 export default defineHook({
   events: {
-    "action.result": onActionResult,
-    "session.failed": onSessionFailed,
-    "step.failed": onStepFailed,
-    "turn.cancelled": onTurnCancelled,
-    "turn.completed": onTurnCompleted,
-    "turn.failed": onTurnFailed,
+    "call.settled": onCallSettled,
+    "model.retried": onModelRetried,
+    "model.settled": onModelSettled,
+    "session.ended": onSessionEnded,
+    "turn.settled": onTurnSettled,
     "turn.started": onTurnStarted,
   },
 });
