@@ -34,4 +34,12 @@ export default defineAgent({
   // and so readable by anyone. Read "Anonymous access" in
   // docs/configuration.md.
   defaultTools: !env.ALLOW_ANONYMOUS_ACCESS,
+  build: {
+    // @opentelemetry/winston-transport loads winston-transport at runtime
+    // through createRequire, which the bundler copies into the function
+    // unresolved. Kept external, the package ships in the deployed
+    // function's node_modules, where that require finds it; bundled, the
+    // function fails to start with "Cannot find module 'winston-transport'".
+    externalDependencies: ["winston-transport"],
+  },
 });
