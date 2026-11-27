@@ -1,3 +1,6 @@
+# pnpm's default minimumReleaseAge (1 day) applies. Renovate reads it and the
+# exclusions below (minimumReleaseAgePackageManagerSync in renovate.json), so
+# it never proposes an update this rule would refuse.
 minimumReleaseAgeExclude:
   - "@ai-sdk/*"
   - "@rolldown/*"
