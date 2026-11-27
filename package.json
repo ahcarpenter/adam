@@ -4,7 +4,6 @@
   "type": "module",
   "imports": {
     "#*": "./agent/*.ts",
-    "#evals/*": "./evals/*.ts",
     "#scripts/*": "./scripts/*.ts"
   },
   "scripts": {
