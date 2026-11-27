@@ -7,6 +7,7 @@ import {
 import { AGENT_NAME } from "./agent-name";
 import { ensureOtelDiagnostics } from "./diagnostics";
 import { parseEnv } from "./env";
+import { oncePerProcess } from "./process-once";
 import { telemetryResource } from "./resource";
 import { flushOnExit } from "./shutdown";
 
@@ -17,11 +18,10 @@ import { flushOnExit } from "./shutdown";
  */
 const turnDurationBuckets = [0.5, 1, 2, 5, 10, 20, 30, 60, 120, 300];
 
-let started = false;
-
 /**
  * Self-configuring bootstrap, matching ensureLogger(): each eve worker
- * process registers its own meter provider once.
+ * process registers its own meter provider once, however many copies of
+ * this module it loads (agent/lib/process-once.ts).
  *
  * No-op without OTEL_EXPORTER_OTLP_ENDPOINT. Neither PostHog nor Braintrust
  * ingests OTLP metrics, so there is no destination by default; until one is
@@ -30,23 +30,24 @@ let started = false;
  * itself, per the OTLP specification.
  */
 export function ensureMetrics(): void {
-  if (started) return;
+  // Recorded only once the environment has parsed: a first call that threw
+  // must not leave the process permanently unmetered.
+  oncePerProcess("meter-provider", () => {
+    const env = parseEnv();
+    if (!env.OTEL_EXPORTER_OTLP_ENDPOINT) return;
 
-  // Flagged only once the environment has parsed: latching before it would
-  // leave a process whose first call threw permanently unmetered.
-  const env = parseEnv();
-  started = true;
-  if (!env.OTEL_EXPORTER_OTLP_ENDPOINT) return;
-
-  ensureOtelDiagnostics();
-  const provider = new MeterProvider({
-    resource: telemetryResource(env.OTEL_SERVICE_NAME),
-    readers: [
-      new PeriodicExportingMetricReader({ exporter: new OTLPMetricExporter() }),
-    ],
+    ensureOtelDiagnostics();
+    const provider = new MeterProvider({
+      resource: telemetryResource(env.OTEL_SERVICE_NAME),
+      readers: [
+        new PeriodicExportingMetricReader({
+          exporter: new OTLPMetricExporter(),
+        }),
+      ],
+    });
+    metrics.setGlobalMeterProvider(provider);
+    flushOnExit(provider);
   });
-  metrics.setGlobalMeterProvider(provider);
-  flushOnExit(provider);
 }
 
 // Instruments are created on first use, not at import: a meter resolved

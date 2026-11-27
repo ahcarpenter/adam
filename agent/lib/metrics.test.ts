@@ -53,6 +53,13 @@ async function loadMetrics(env: Record<string, string | undefined> = validEnv) {
   return await import("./metrics");
 }
 
+/** What a new process looks like: no meter provider registered yet. */
+function freshProcess() {
+  delete (globalThis as Record<symbol, unknown>)[
+    Symbol.for("adam.once-per-process.meter-provider")
+  ];
+}
+
 /** parseEnv requires every key in validEnv, so dropping one is enough. */
 const incompleteEnv = { ...validEnv, BRAINTRUST_API_KEY: undefined };
 
@@ -60,6 +67,7 @@ describe("metrics", () => {
   let meter: ReturnType<typeof recordingMeter>;
 
   beforeEach(() => {
+    freshProcess();
     counters.clear();
     histograms.clear();
     meterProvider.mockClear();
@@ -115,6 +123,21 @@ describe("metrics", () => {
       ensureMetrics();
 
       expect(meterProvider).toHaveBeenCalledTimes(1);
+    });
+
+    // eve can load this module twice in one process (see
+    // agent/lib/process-once.ts), and the OTel metrics API takes one
+    // provider per process.
+    it("bootstraps once per process when the module is loaded twice", async () => {
+      const env = {
+        ...validEnv,
+        OTEL_EXPORTER_OTLP_ENDPOINT: "https://collector.example.com",
+      };
+      (await loadMetrics(env)).ensureMetrics();
+      (await loadMetrics(env)).ensureMetrics();
+
+      expect(meterProvider).toHaveBeenCalledTimes(1);
+      expect(metrics.setGlobalMeterProvider).toHaveBeenCalledTimes(1);
     });
 
     it("throws on an incomplete environment", async () => {
