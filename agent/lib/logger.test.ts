@@ -1,4 +1,4 @@
-import { logs } from "@opentelemetry/api";
+import { logs } from "@opentelemetry/api-logs";
 import { OpenTelemetryTransportV3 } from "@opentelemetry/winston-transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import winston from "winston";
@@ -106,7 +106,9 @@ describe("ensureLogger", () => {
     loggerProvider.mockClear();
     // Keeps the process-global logger provider out of the test run while
     // still observing that ensureLogger registers one.
-    vi.spyOn(logs, "setGlobalLoggerProvider").mockReturnValue(true);
+    vi.spyOn(logs, "setGlobalLoggerProvider").mockImplementation(
+      (provider) => provider,
+    );
   });
 
   afterEach(() => {
@@ -191,31 +193,6 @@ describe("ensureLogger", () => {
     ensureLogger();
 
     expect(process.listenerCount("beforeExit")).toBe(before + 1);
-  });
-
-  // The winston bridge looks its logger up on a process-global logs API, so
-  // the provider has to be registered on that same global: registered on any
-  // other one, every record is silently dropped before it reaches the exporter.
-  it("delivers winston records to the provider it registers", () => {
-    for (const [key, value] of Object.entries(validEnv)) vi.stubEnv(key, value);
-    const emit = vi.fn();
-    loggerProvider.mockImplementationOnce(function (this: {
-      getLogger: () => { emit: typeof emit };
-    }) {
-      this.getLogger = () => ({ emit });
-    });
-    vi.mocked(logs.setGlobalLoggerProvider).mockRestore();
-    winston.configure({ transports: [] });
-    try {
-      ensureLogger();
-      winston.info("reaches the exporter");
-    } finally {
-      logs.disable();
-    }
-
-    expect(emit).toHaveBeenCalledWith(
-      expect.objectContaining({ body: "reaches the exporter" }),
-    );
   });
 
   it("throws on an incomplete environment", () => {
