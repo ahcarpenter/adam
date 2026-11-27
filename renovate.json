@@ -32,7 +32,10 @@
     },
     {
       "description": "SDK 2 hold, see the @opentelemetry/api rule: the SDK 3 releases of these start at 3.0.0.",
-      "matchPackageNames": ["@opentelemetry/resources", "@opentelemetry/sdk-metrics"],
+      "matchPackageNames": [
+        "@opentelemetry/resources",
+        "@opentelemetry/sdk-metrics"
+      ],
       "allowedVersions": "<3.0.0"
     },
     {
