@@ -27,15 +27,23 @@ function glob(pattern: string): RegExp {
   return new RegExp(`^${source}$`);
 }
 
-const base64 = (value: string) => Buffer.from(value).toString("base64");
+/**
+ * Upstash answers in base64 only when the request asks for it with
+ * `Upstash-Encoding: base64`, and the client decides whether to ask.
+ */
+function encoder(headers: HeadersInit | undefined) {
+  return new Headers(headers).get("Upstash-Encoding") === "base64"
+    ? (value: string) => Buffer.from(value).toString("base64")
+    : (value: string) => value;
+}
 
 /**
  * Stands in for Upstash's REST endpoint: answers SCAN over `keyspace` two
- * keys a page, as base64 the way Upstash does, and records everything sent.
+ * keys a page, encoded as the request asks, and records everything sent.
  */
 function stubUpstash(keyspace: string[]) {
   const commands: Command[] = [];
-  const answer = (command: Command) => {
+  const answer = (command: Command, encode: (value: string) => string) => {
     commands.push(command);
     if (String(command[0]).toUpperCase() !== "SCAN") return { result: 1 };
     const start = Number(command[1]);
@@ -44,17 +52,21 @@ function stubUpstash(keyspace: string[]) {
     );
     const next = start + 2 < matching.length ? String(start + 2) : "0";
     return {
-      result: [base64(next), matching.slice(start, start + 2).map(base64)],
+      result: [encode(next), matching.slice(start, start + 2).map(encode)],
     };
   };
-  vi.stubGlobal("fetch", async (_url: unknown, init: { body: string }) => {
-    const body = JSON.parse(init.body) as Command | Command[];
-    return Response.json(
-      Array.isArray(body[0])
-        ? (body as Command[]).map(answer)
-        : answer(body as Command),
-    );
-  });
+  vi.stubGlobal(
+    "fetch",
+    async (_url: unknown, init: { body: string; headers?: HeadersInit }) => {
+      const encode = encoder(init.headers);
+      const body = JSON.parse(init.body) as Command | Command[];
+      return Response.json(
+        Array.isArray(body[0])
+          ? (body as Command[]).map((command) => answer(command, encode))
+          : answer(body as Command, encode),
+      );
+    },
+  );
   return {
     commands,
     /** Each key given an expiry, with the seconds it was given. */
